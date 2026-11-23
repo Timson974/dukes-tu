@@ -305,11 +305,8 @@ btnPlay.addEventListener('click', async () => {
     source.start(0);
     source.onended = stopAnim;
   } else {
-    // Silent oscillator so analyser ticks
-    const osc = audioCtx.createOscillator();
-    const g   = audioCtx.createGain(); g.gain.value = 0;
-    osc.connect(g); g.connect(analyser); osc.start();
-    source = osc;
+    // Generate beat in Web Audio API — real sound!
+    startBeat(song);
   }
 
   playing = true;
@@ -385,6 +382,8 @@ function stopAnim() {
   playing = false;
   cancelAnimationFrame(raf);
   if (source) { try { source.stop(); } catch(e){} source = null; }
+  beatNodes.forEach(n => { try { n.stop(); } catch(e){} });
+  beatNodes = [];
   btnPlay.disabled = false;
   btnStop.disabled = true;
   bars.forEach(b => b.style.height = '4px');
@@ -402,6 +401,107 @@ function reset() {
   ctx.clearRect(0, 0, cvs.width, cvs.height);
   photoIn.value = ''; audioIn.value = '';
   btnPlay.disabled = true;
+}
+
+// ── BEAT GENERATOR (Web Audio synth per genre)
+let beatNodes = [];
+function startBeat(genre) {
+  beatNodes.forEach(n => { try { n.stop(); } catch(e){} });
+  beatNodes = [];
+
+  const bpm  = { hiphop:88, pop:120, chill:75, epic:140 }[genre] || 100;
+  const beat = 60 / bpm;
+  const ctx2 = audioCtx;
+  const master = ctx2.createGain(); master.gain.value = 0.55;
+  master.connect(analyser);
+  source = master; // so stopAnim can disconnect
+
+  function kick(time) {
+    const osc = ctx2.createOscillator();
+    const g   = ctx2.createGain();
+    osc.frequency.setValueAtTime(150, time);
+    osc.frequency.exponentialRampToValueAtTime(40, time + 0.1);
+    g.gain.setValueAtTime(1, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + 0.25);
+    osc.connect(g); g.connect(master);
+    osc.start(time); osc.stop(time + 0.3);
+  }
+
+  function snare(time) {
+    const buf  = ctx2.createBuffer(1, ctx2.sampleRate * 0.15, ctx2.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random()*2-1) * Math.pow(1 - i/data.length, 2);
+    const src2 = ctx2.createBufferSource();
+    const g    = ctx2.createGain();
+    src2.buffer = buf;
+    g.gain.setValueAtTime(0.6, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+    src2.connect(g); g.connect(master);
+    src2.start(time);
+    beatNodes.push(src2);
+  }
+
+  function hihat(time, vol=0.25) {
+    const buf  = ctx2.createBuffer(1, ctx2.sampleRate * 0.05, ctx2.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random()*2-1) * Math.pow(1 - i/data.length, 3);
+    const src2 = ctx2.createBufferSource();
+    const filt = ctx2.createBiquadFilter(); filt.type='highpass'; filt.frequency.value=8000;
+    const g    = ctx2.createGain();
+    src2.buffer = buf;
+    g.gain.setValueAtTime(vol, time);
+    src2.connect(filt); filt.connect(g); g.connect(master);
+    src2.start(time);
+    beatNodes.push(src2);
+  }
+
+  function bass(time, freq, dur) {
+    const osc = ctx2.createOscillator();
+    const g   = ctx2.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.4, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + dur);
+    osc.connect(g); g.connect(master);
+    osc.start(time); osc.stop(time + dur + 0.05);
+    beatNodes.push(osc);
+  }
+
+  // Schedule 8 bars and loop
+  function scheduleBars(startTime) {
+    const bars = 8;
+    const barLen = beat * 4;
+    for (let bar = 0; bar < bars; bar++) {
+      const bt = startTime + bar * barLen;
+      if (genre === 'hiphop') {
+        kick(bt); kick(bt + beat*2.5);
+        snare(bt + beat); snare(bt + beat*3);
+        for (let s = 0; s < 8; s++) hihat(bt + s*beat*0.5, 0.18);
+        bass(bt, 55, beat*1.8); bass(bt+beat*2, 55, beat*0.8); bass(bt+beat*3, 41, beat*0.9);
+      } else if (genre === 'pop') {
+        kick(bt); kick(bt+beat); kick(bt+beat*2); kick(bt+beat*3);
+        snare(bt+beat); snare(bt+beat*3);
+        for (let s = 0; s < 8; s++) hihat(bt + s*beat*0.5, 0.2);
+        bass(bt, 65, beat*0.9); bass(bt+beat*2, 65, beat*0.9);
+      } else if (genre === 'chill') {
+        kick(bt); kick(bt+beat*2+beat*0.5);
+        snare(bt+beat*2);
+        for (let s = 0; s < 4; s++) hihat(bt + s*beat + beat*0.75, 0.12);
+        bass(bt, 49, beat*1.5); bass(bt+beat*2.5, 44, beat*1.2);
+      } else { // epic
+        kick(bt); kick(bt+beat*0.5); kick(bt+beat*2); kick(bt+beat*2.5);
+        snare(bt+beat); snare(bt+beat*3);
+        for (let s = 0; s < 16; s++) hihat(bt + s*beat*0.25, 0.15);
+        bass(bt, 55, beat*0.6); bass(bt+beat, 55, beat*0.6); bass(bt+beat*2, 41, beat*0.6); bass(bt+beat*3, 49, beat*0.6);
+      }
+    }
+    // Loop
+    const loopAt = startTime + bars * barLen - 0.1;
+    const delay = (loopAt - ctx2.currentTime) * 1000;
+    if (delay > 0) setTimeout(() => { if (playing) scheduleBars(loopAt); }, delay);
+  }
+
+  scheduleBars(ctx2.currentTime + 0.05);
 }
 
 // ── ANIMATION LOOP
@@ -425,9 +525,8 @@ function loop() {
   });
 
   // Head motion — natural sway (wider arc for realistic head turn)
-  const cW = cvs.width, cH = cvs.height;
-  thx = Math.sin(t * 0.9)  * cW * 0.045 * energy + Math.sin(t * 1.7) * cW * 0.012;
-  thy = Math.sin(t * 0.6)  * cH * 0.018 * energy;
+  thx = Math.sin(t * 0.9)  * 18 * energy + Math.sin(t * 1.7) * 6;
+  thy = Math.sin(t * 0.6)  * 10 * energy;
   hx += (thx - hx) * 0.07;
   hy += (thy - hy) * 0.07;
 
@@ -471,8 +570,8 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
 
   // Shared sway transform
   const pivX  = W * 0.5;
-  const pivY  = H * 2.2;          // pivot below frame → upper-body sway
-  const tilt  = dx / W * 3.5;    // ±~9° at full sway — realistic head turn
+  const pivY  = H * 1.4;
+  const tilt  = dx * 0.006;      // ±~5° at full sway
   const pScl  = 1 + energy * 0.012;
   const cosT  = Math.cos(tilt);
   const sinT  = Math.sin(tilt);
