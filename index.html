@@ -602,12 +602,8 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
   ctx.drawImage(img, iX - iW*0.06, iY - iH*0.06, iW*1.12, iH*1.12);
   ctx.restore();
 
-  // 2. PERSON — same photo with sway
+  // 2. PERSON — static, no sway on the photo itself
   ctx.save();
-  ctx.translate(pivX + dx, pivY + dy*0.5);
-  ctx.rotate(tilt);
-  ctx.scale(pScl, pScl);
-  ctx.translate(-pivX, -pivY);
   ctx.drawImage(img, iX, iY, iW, iH);
   ctx.restore();
 
@@ -629,9 +625,9 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
   // size: slider 1–10, map to 0.5–2.0 so minimum is already decent
   const size = 0.5 + (sizeVal - 1) / 9 * 1.5;
 
-  // Mouth centre — fixed to canvas coords (no xform: position is always predictable)
-  const mCx = W * pctX;
-  const mCy = H * pctY;
+  // Mouth centre — slight vertical bounce with music
+  const mCx = W * pctX + dx * 0.3;
+  const mCy = H * pctY + dy * 0.4;
   const mRx = W * 0.052 * size;
   // openH unused — opening computed inside mouth block from moN
 
@@ -707,9 +703,9 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
   // 4. BLINK — always draw eye markers (dim when open, dark when blinking)
   {
     const eyeSpread = parseFloat(document.getElementById('eyeSpreadSlider').value) / 100;
-    // Eyes fixed to canvas coords — always predictable
-    const eCx  = W * pctX;
-    const eCy  = H * (pctY - eyeOffPct);
+    // Eyes follow same subtle bounce as mouth
+    const eCx  = W * pctX + dx * 0.3;
+    const eCy  = H * (pctY - eyeOffPct) + dy * 0.4;
     const eGap = mRx * eyeSpread;
     const eRx  = mRx * 0.52;
     const eRy  = blinkClose > 0
