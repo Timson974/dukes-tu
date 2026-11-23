@@ -414,11 +414,11 @@ function loop() {
     b.style.height = (4 + v * 26) + 'px';
   });
 
-  // Head motion — stronger amplitude so it's visible
-  thx = Math.sin(t * 0.9)  * 36 * energy + Math.sin(t * 1.7) * 14;
-  thy = Math.sin(t * 0.6)  * 20 * energy + Math.sin(t * 1.1) * 8;
-  hx += (thx - hx) * 0.09;
-  hy += (thy - hy) * 0.09;
+  // Head motion — natural sway
+  thx = Math.sin(t * 0.9)  * 14 * energy + Math.sin(t * 1.7) * 5;
+  thy = Math.sin(t * 0.6)  * 8  * energy;
+  hx += (thx - hx) * 0.07;
+  hy += (thy - hy) * 0.07;
 
   // Mouth open — stronger
   tmouth = energy * 20;
@@ -446,15 +446,34 @@ function tempo(s) { return { hiphop:2.8, pop:2.4, chill:1.4, epic:3.2 }[s] || 2;
 function draw(dx, dy, mo, energy) {
   ctx.clearRect(0, 0, cvs.width, cvs.height);
 
-  // 1. Draw photo — rotate slightly around bottom-centre for "head tilt" feel
-  const scale = 1 + energy * 0.02;
-  const tilt  = dx * 0.004; // slight rotation from side-to-side movement
-  const pivotX = cvs.width  * 0.5;
-  const pivotY = cvs.height * 1.2; // pivot below frame = top sways more than bottom
+  // 1. BACKGROUND — static, slightly zoomed so edges don't show when person shifts
   ctx.save();
-  ctx.translate(pivotX + dx * 0.5, pivotY + dy * 0.3);
+  const bgScale = 1.12;
+  const bgOX = (cvs.width  - cvs.width  * bgScale) / 2;
+  const bgOY = (cvs.height - cvs.height * bgScale) / 2;
+  ctx.drawImage(img, iX + bgOX, iY + bgOY, iW * bgScale, iH * bgScale);
+  ctx.restore();
+
+  // 2. PERSON — same photo but shifted, masked to centre strip
+  // We fake "person moves, background stays" by drawing the full photo shifted
+  // and masking out a vertical strip (person occupies centre ~60% of width)
+  const tilt = dx * 0.0012;
+  const pivotX = cvs.width * 0.5;
+  const pivotY = cvs.height * 1.4;
+  const personScale = 1 + energy * 0.012;
+
+  // Clip to person strip (centre 70% of canvas width, full height)
+  const clipMargin = cvs.width * 0.15;
+  ctx.save();
+  ctx.beginPath();
+  // Soft-edged clip via feathered rectangle approach:
+  // draw person slightly wider than clip so edges are hidden
+  ctx.rect(clipMargin, 0, cvs.width - clipMargin * 2, cvs.height);
+  ctx.clip();
+
+  ctx.translate(pivotX + dx, pivotY + dy * 0.5);
   ctx.rotate(tilt);
-  ctx.scale(scale, scale);
+  ctx.scale(personScale, personScale);
   ctx.translate(-pivotX, -pivotY);
   ctx.drawImage(img, iX, iY, iW, iH);
   ctx.restore();
