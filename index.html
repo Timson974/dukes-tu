@@ -558,7 +558,7 @@ function animate() {
   headY += (targetHY - headY) * 0.08;
 
   // Mouth open — driven by mid frequencies / beat
-  targetMouth = finalEnergy * 18;
+  targetMouth = finalEnergy * 10;
   mouthOpen += (targetMouth - mouthOpen) * 0.15;
 
   // Blink
@@ -592,15 +592,9 @@ function drawAnimatedFace(dx, dy, mouth, blink, energy) {
   const H = faceCanvas.height;
   faceCtx.clearRect(0, 0, W, H);
 
-  if (!photoImg || !landmarks) {
-    // No landmarks — just draw photo with head-bob transform
-    drawPhotoTransformed(dx, dy, energy);
-    return;
-  }
-
-  // With landmarks: draw photo shifted + overlay face modifications
+  // Always just draw photo with head-bob — overlay only subtle mouth
   drawPhotoTransformed(dx, dy, energy);
-  drawFaceOverlay(dx, dy, mouth, blink);
+  if (landmarks) drawFaceOverlay(dx, dy, mouth, blink);
 }
 
 function drawPhotoTransformed(dx, dy, energy) {
@@ -623,78 +617,7 @@ function drawPhotoTransformed(dx, dy, energy) {
 }
 
 function drawFaceOverlay(dx, dy, mouth, blink) {
-  if (!landmarks) return;
-  const W = faceCanvas.width;
-  const H = faceCanvas.height;
-
-  // Map landmark to canvas coords
-  const lm = (i) => ({
-    x: landmarks[i].x * W + dx,
-    y: landmarks[i].y * H + dy
-  });
-
-  // ── MOUTH ──
-  // Upper lip: 61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291
-  // Lower lip: 61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291
-  const upperLip = [61,185,40,39,37,0,267,269,270,409,291];
-  const lowerLip = [61,146,91,181,84,17,314,405,321,375,291];
-
-  // Open mouth by pushing upper up and lower down
-  faceCtx.save();
-  faceCtx.beginPath();
-  upperLip.forEach((idx, i) => {
-    const p = lm(idx);
-    p.y -= mouth * 0.4;
-    i === 0 ? faceCtx.moveTo(p.x, p.y) : faceCtx.lineTo(p.x, p.y);
-  });
-  [...lowerLip].reverse().forEach(idx => {
-    const p = lm(idx);
-    p.y += mouth * 0.6;
-    faceCtx.lineTo(p.x, p.y);
-  });
-  faceCtx.closePath();
-
-  // Inside mouth — dark
-  faceCtx.fillStyle = '#1a0505';
-  faceCtx.fill();
-
-  // Teeth hint
-  if (mouth > 4) {
-    const topCenter = lm(0);
-    const botCenter = lm(17);
-    topCenter.y -= mouth * 0.4;
-    botCenter.y += mouth * 0.6;
-    const teethH = Math.min((botCenter.y - topCenter.y) * 0.5, mouth * 0.5);
-    const teethW = Math.abs(lm(291).x - lm(61).x) * 0.6;
-    faceCtx.fillStyle = 'rgba(255,252,240,0.9)';
-    faceCtx.beginPath();
-    faceCtx.roundRect(topCenter.x - teethW/2, topCenter.y, teethW, teethH, 2);
-    faceCtx.fill();
-  }
-  faceCtx.restore();
-
-  // ── BLINK ──
-  if (blink > 0.1) {
-    // Left eye close
-    drawEyeLid(faceCtx, lm, [33,7,163,144,145,153,154,155,133], blink, W, H);
-    // Right eye close
-    drawEyeLid(faceCtx, lm, [362,382,381,380,374,373,390,249,263], blink, W, H);
-  }
-}
-
-function drawEyeLid(ctx, lm, indices, amount, W, H) {
-  if (!indices.length) return;
-  ctx.save();
-  ctx.beginPath();
-  indices.forEach((idx, i) => {
-    const p = lm(idx);
-    i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
-  });
-  ctx.closePath();
-  // Sample skin color — just use a warm neutral
-  ctx.fillStyle = `rgba(210,180,140,${amount})`;
-  ctx.fill();
-  ctx.restore();
+  // No overlay — head bob only via drawPhotoTransformed
 }
 
 function updateMoodFromEnergy(e) {
