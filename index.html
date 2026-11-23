@@ -138,9 +138,13 @@ footer a { color: var(--accent2); text-decoration: none; }
       <button class="btn" id="btnNew">📂 New Photo</button>
       <button class="btn save" id="btnSave" disabled>💾 Save Video</button>
     </div>
-    <div id="mouthRow" style="display:none; flex-direction:column; gap:6px;">
-      <label style="font-size:12px;color:var(--text3)">👄 Mouth position <span id="mouthVal">72</span>%</label>
+    <div id="mouthRow" style="display:none; flex-direction:column; gap:8px;">
+      <label style="font-size:12px;color:var(--text3)">↕️ Vertical <span id="mouthVal">72</span>%</label>
       <input type="range" id="mouthSlider" min="10" max="95" value="72" style="width:100%;accent-color:var(--accent)">
+      <label style="font-size:12px;color:var(--text3)">↔️ Horizontal <span id="mouthXVal">50</span>%</label>
+      <input type="range" id="mouthXSlider" min="20" max="80" value="50" style="width:100%;accent-color:var(--accent2)">
+      <label style="font-size:12px;color:var(--text3)">🔵 Size <span id="mouthSizeVal">5</span></label>
+      <input type="range" id="mouthSizeSlider" min="1" max="10" value="5" style="width:100%;accent-color:var(--green)">
     </div>
   </div>
 </main>
@@ -218,12 +222,14 @@ function resizeCvs() {
   iH = img.height * s;
   iX = (cvs.width  - iW) / 2;
   iY = (cvs.height - iH) / 2;
-  // Mouth: horizontal centre, slider % down canvas
-  const pct = (document.getElementById('mouthSlider')?.value || 72) / 100;
-  mouthCX = cvs.width  * 0.5;
-  mouthCY = cvs.height * pct;
-  // Mouth radius scales with how far from top — small for full-body shots
-  mouthRX = cvs.width * 0.045 * (0.5 + pct * 0.5);
+  // Mouth: position from sliders
+  const pctY = (document.getElementById('mouthSlider')?.value    || 72) / 100;
+  const pctX = (document.getElementById('mouthXSlider')?.value   || 50) / 100;
+  const size = (document.getElementById('mouthSizeSlider')?.value || 5)  / 5; // 0.2–2.0
+  mouthCX = cvs.width  * pctX;
+  mouthCY = cvs.height * pctY;
+  // Radius: base scales with vertical position (smaller for full body), then user size
+  mouthRX = cvs.width * 0.038 * (0.4 + pctY * 0.6) * size;
 }
 
 function drawStatic() {
