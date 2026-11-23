@@ -750,6 +750,7 @@ function placeFromCanvas(clientX, clientY) {
   const pY = Math.round(Math.max(10, Math.min(95, fy * 100)));
   mouthSlider.value  = pY; mouthValEl.textContent  = pY;
   mouthXSlider.value = pX; mouthXValEl.textContent = pX;
+  if (!playing) drawStatic(); // redraw crosshair immediately
 }
 cvs.style.cursor = 'crosshair';
 cvs.addEventListener('click', e => placeFromCanvas(e.clientX, e.clientY));
@@ -757,7 +758,7 @@ cvs.addEventListener('touchend', e => {
   e.preventDefault();
   const t = e.changedTouches[0];
   placeFromCanvas(t.clientX, t.clientY);
-}, { passive: false });;
+}, { passive: false });
 
 // Presets
 function applyPreset(v, x, s, eyeOff, eyeSpr) {
@@ -767,10 +768,10 @@ function applyPreset(v, x, s, eyeOff, eyeSpr) {
   eyeOffsetSlider.value = eyeOff; eyeOffsetValEl.textContent = eyeOff;
   eyeSpreadSlider.value = eyeSpr; eyeSpreadValEl.textContent = eyeSpr;
 }
-// Selfie: face fills frame, mouth ~80%, eyes ~9% above
-document.getElementById('presetSelfie').addEventListener('click',   () => applyPreset(80, 50, 6, 9, 75));
-// Portrait: half-body, mouth ~68%
-document.getElementById('presetPortrait').addEventListener('click', () => applyPreset(68, 50, 5, 10, 85));
+// Selfie: face fills frame, mouth ~75%, eyes ~9% above
+document.getElementById('presetSelfie').addEventListener('click',   () => applyPreset(75, 50, 6, 9, 75));
+// Portrait: half-body, mouth ~55%
+document.getElementById('presetPortrait').addEventListener('click', () => applyPreset(55, 50, 5, 10, 85));
 // Full body: small face, mouth ~38%
 document.getElementById('presetFull').addEventListener('click',     () => applyPreset(38, 50, 3, 7, 70));
 
