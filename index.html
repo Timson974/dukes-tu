@@ -458,18 +458,23 @@ function draw(dx, dy, mo, energy) {
   ctx.drawImage(img, iX - iW*(bgS-1)/2, iY - iH*(bgS-1)/2, iW*bgS, iH*bgS);
   ctx.restore();
 
-  // 2. PERSON — same photo shifted+tilted, clipped to centre strip
-  const clip = cvs.width * 0.15;
+  // 2. PERSON — shifted+tilted, faded edges via gradient mask
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(clip, 0, cvs.width - clip * 2, cvs.height);
-  ctx.clip();
   ctx.translate(pivX + dx, pivY + dy * 0.5);
   ctx.rotate(tilt);
   ctx.scale(pScale, pScale);
   ctx.translate(-pivX, -pivY);
   ctx.drawImage(img, iX, iY, iW, iH);
   ctx.restore();
+
+  // Soft vignette on edges to hide seam
+  const fade = cvs.width * 0.18;
+  const gL = ctx.createLinearGradient(0, 0, fade, 0);
+  gL.addColorStop(0, 'rgba(0,0,0,0.9)'); gL.addColorStop(1, 'rgba(0,0,0,0)');
+  const gR = ctx.createLinearGradient(cvs.width, 0, cvs.width - fade, 0);
+  gR.addColorStop(0, 'rgba(0,0,0,0.9)'); gR.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gL; ctx.fillRect(0, 0, fade, cvs.height);
+  ctx.fillStyle = gR; ctx.fillRect(cvs.width - fade, 0, fade, cvs.height);
 
   // 3. MOUTH — apply identical transform so it tracks the face
   const pctY = parseFloat(document.getElementById('mouthSlider').value)     / 100;
