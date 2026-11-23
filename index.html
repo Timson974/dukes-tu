@@ -283,10 +283,6 @@ footer a { color: var(--accent2); text-decoration: none; }
   DukesTU Talking Photo · <a href="https://timson974.netlify.app">Portfolio</a>
 </footer>
 
-<!-- MediaPipe Face Mesh -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-
 <script>
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 
@@ -298,16 +294,14 @@ let analyser = null;
 let sourceNode = null;
 let isPlaying = false;
 let animFrame = null;
-let faceMesh = null;
-let faceReady = false;
-let landmarks = null;
 let selectedSong = null;
+// Face position (auto-detected from pixel scan or fallback)
+let faceRegion = null; // {cx, cy, r} in image-normalized coords 0..1
 
 // head pose animation (driven by audio when no gyro)
-let headX = 0, headY = 0, headZ = 0;
+let headX = 0, headY = 0;
 let targetHX = 0, targetHY = 0;
 let mouthOpen = 0, targetMouth = 0;
-let blinkT = 0;
 let time = 0;
 
 // ── ELEMENTS ───────────────────────────────────────────────────────────────────
@@ -342,7 +336,7 @@ photoInput.addEventListener('change', e => {
     photoCard.classList.add('has-file');
     placeholder.classList.add('hidden');
     drawPhoto();
-    detectFace();
+    guessFaceRegion();
     checkReady();
   };
   img.src = url;
@@ -393,47 +387,42 @@ async function loadAudioFile(file) {
   moodText.textContent = 'Music ready!';
 }
 
-// ── FACE DETECTION ─────────────────────────────────────────────────────────────
-async function detectFace() {
+// ── FACE REGION GUESS ─────────────────────────────────────────────────────────
+// No ML — heuristic: scan for skin-tone pixels to find face center
+function guessFaceRegion() {
   if (!photoImg) return;
-  procText.textContent = 'Detecting face…';
-  processing.classList.add('active');
+  const tmp = document.createElement('canvas');
+  const S = 80; // sample at low res
+  tmp.width = S; tmp.height = S;
+  const ctx = tmp.getContext('2d');
+  ctx.drawImage(photoImg, 0, 0, S, S);
+  const data = ctx.getImageData(0, 0, S, S).data;
 
-  try {
-    if (!faceMesh) {
-      faceMesh = new FaceMesh({ locateFile: f =>
-        `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
-      });
-      faceMesh.setOptions({
-        maxNumFaces: 1,
-        refineLandmarks: true,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5,
-      });
-      faceMesh.onResults(onFaceResults);
+  let sumX = 0, sumY = 0, count = 0;
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const i = (y * S + x) * 4;
+      const r = data[i], g = data[i+1], b = data[i+2];
+      // Skin tone: r > 60, r > g, g > b (works for most skin tones + B&W)
+      if (r > 60 && r > g && g > b * 0.85 && y < S * 0.75) {
+        sumX += x; sumY += y; count++;
+      }
     }
-
-    // Draw photo to temp canvas for MediaPipe
-    const tmp = document.createElement('canvas');
-    tmp.width = photoImg.width; tmp.height = photoImg.height;
-    tmp.getContext('2d').drawImage(photoImg, 0, 0);
-    await faceMesh.send({ image: tmp });
-  } catch(e) {
-    console.warn('Face detection failed:', e);
-    faceReady = true; // proceed without
   }
 
-  processing.classList.remove('active');
-}
-
-function onFaceResults(results) {
-  if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-    landmarks = results.multiFaceLandmarks[0];
-    faceReady = true;
-    checkReady();
+  if (count > 50) {
+    // Normalized face center
+    const fcx = sumX / count / S;
+    const fcy = sumY / count / S;
+    // Mouth is ~30% below face center, in lower third of face region
+    faceRegion = {
+      mouthX: fcx,
+      mouthY: fcy + 0.12,
+      faceR: 0.18
+    };
   } else {
-    faceReady = true;
-    checkReady();
+    // Fallback: assume portrait — face center at top 40%, mouth at 55%
+    faceRegion = { mouthX: 0.5, mouthY: 0.55, faceR: 0.18 };
   }
 }
 
@@ -592,9 +581,8 @@ function drawAnimatedFace(dx, dy, mouth, blink, energy) {
   const H = faceCanvas.height;
   faceCtx.clearRect(0, 0, W, H);
 
-  // Always just draw photo with head-bob — overlay only subtle mouth
   drawPhotoTransformed(dx, dy, energy);
-  if (landmarks) drawFaceOverlay(dx, dy, mouth, blink);
+  drawMouthOverlay(dx, dy, mouth, W, H);
 }
 
 function drawPhotoTransformed(dx, dy, energy) {
@@ -616,8 +604,28 @@ function drawPhotoTransformed(dx, dy, energy) {
   faceCtx.restore();
 }
 
-function drawFaceOverlay(dx, dy, mouth, blink) {
-  // No overlay — head bob only via drawPhotoTransformed
+function drawMouthOverlay(dx, dy, mouth, W, H) {
+  if (!faceRegion || mouth < 0.5) return;
+
+  // Map normalized face coords to canvas, offset by head movement
+  const cx = faceRegion.mouthX * W + dx;
+  const cy = faceRegion.mouthY * H + dy;
+  const rx = faceRegion.faceR * W * 0.55; // mouth width ~55% of face radius
+  const ry = Math.min(mouth * 0.4, rx * 0.35); // height from energy
+
+  if (ry < 1) return;
+
+  faceCtx.save();
+  // Dark inner mouth
+  faceCtx.beginPath();
+  faceCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  faceCtx.fillStyle = 'rgba(20,8,8,0.6)';
+  faceCtx.fill();
+  // Soft edge
+  faceCtx.strokeStyle = 'rgba(0,0,0,0.25)';
+  faceCtx.lineWidth = 2;
+  faceCtx.stroke();
+  faceCtx.restore();
 }
 
 function updateMoodFromEnergy(e) {
@@ -631,7 +639,7 @@ function updateMoodFromEnergy(e) {
 function reset() {
   stopAnimation();
   photoImg = null; audioBuffer = null; selectedSong = null;
-  landmarks = null; faceReady = false;
+  faceRegion = null;
   photoCard.classList.remove('has-file');
   audioCard.classList.remove('has-file');
   chips.forEach(c => c.classList.remove('active'));
