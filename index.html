@@ -446,63 +446,43 @@ function tempo(s) { return { hiphop:2.8, pop:2.4, chill:1.4, epic:3.2 }[s] || 2;
 function draw(dx, dy, mo, energy) {
   ctx.clearRect(0, 0, cvs.width, cvs.height);
 
-  // 1. BACKGROUND — static, slightly zoomed so edges don't show when person shifts
+  // Shared transform params
+  const pivX = cvs.width  * 0.5;
+  const pivY = cvs.height * 1.4;
+  const tilt  = dx * 0.0012;
+  const pScale = 1 + energy * 0.012;
+
+  // 1. BACKGROUND — static, zoomed 12% so edges don't show
   ctx.save();
-  const bgScale = 1.12;
-  const bgOX = (cvs.width  - cvs.width  * bgScale) / 2;
-  const bgOY = (cvs.height - cvs.height * bgScale) / 2;
-  ctx.drawImage(img, iX + bgOX, iY + bgOY, iW * bgScale, iH * bgScale);
+  const bgS = 1.12;
+  ctx.drawImage(img, iX - iW*(bgS-1)/2, iY - iH*(bgS-1)/2, iW*bgS, iH*bgS);
   ctx.restore();
 
-  // 2. PERSON — same photo but shifted, masked to centre strip
-  // We fake "person moves, background stays" by drawing the full photo shifted
-  // and masking out a vertical strip (person occupies centre ~60% of width)
-  const tilt = dx * 0.0012;
-  const pivotX = cvs.width * 0.5;
-  const pivotY = cvs.height * 1.4;
-  const personScale = 1 + energy * 0.012;
-
-  // Clip to person strip (centre 70% of canvas width, full height)
-  const clipMargin = cvs.width * 0.15;
+  // 2. PERSON — same photo shifted+tilted, clipped to centre strip
+  const clip = cvs.width * 0.15;
   ctx.save();
   ctx.beginPath();
-  // Soft-edged clip via feathered rectangle approach:
-  // draw person slightly wider than clip so edges are hidden
-  ctx.rect(clipMargin, 0, cvs.width - clipMargin * 2, cvs.height);
+  ctx.rect(clip, 0, cvs.width - clip * 2, cvs.height);
   ctx.clip();
-
-  ctx.translate(pivotX + dx, pivotY + dy * 0.5);
+  ctx.translate(pivX + dx, pivY + dy * 0.5);
   ctx.rotate(tilt);
-  ctx.scale(personScale, personScale);
-  ctx.translate(-pivotX, -pivotY);
+  ctx.scale(pScale, pScale);
+  ctx.translate(-pivX, -pivY);
   ctx.drawImage(img, iX, iY, iW, iH);
   ctx.restore();
 
-  // 2. Mouth — must follow the face exactly as it moves
+  // 3. MOUTH — apply identical transform so it tracks the face
   const pctY = parseFloat(document.getElementById('mouthSlider').value)     / 100;
   const pctX = parseFloat(document.getElementById('mouthXSlider').value)    / 100;
   const size = parseFloat(document.getElementById('mouthSizeSlider').value) / 5;
 
-  // Base mouth position in canvas space (same origin as the photo)
   const baseMX = cvs.width  * pctX;
   const baseMY = cvs.height * pctY;
-
-  // Apply same transform as the person layer: pivot + tilt + shift
-  // pivot is at (pivotX, pivotY), person shifts by (dx, dy*0.5), tilts by tilt angle
-  const pX = cvs.width * 0.5;
-  const pY = cvs.height * 1.4;
-  const tilt = dx * 0.0012;
-
-  // Rotate baseMX/baseMY around pivot
-  const relX = baseMX - pX;
-  const relY = baseMY - pY;
+  const relX = baseMX - pivX;
+  const relY = baseMY - pivY;
   const cosT = Math.cos(tilt), sinT = Math.sin(tilt);
-  const rotX = relX * cosT - relY * sinT;
-  const rotY = relX * sinT + relY * cosT;
-
-  const scale = 1 + energy * 0.012;
-  const cx = pX + (rotX * scale) + dx;
-  const cy = pY + (rotY * scale) + dy * 0.5;
+  const cx = pivX + (relX*cosT - relY*sinT)*pScale + dx;
+  const cy = pivY + (relX*sinT + relY*cosT)*pScale + dy*0.5;
 
   const rx = cvs.width * 0.038 * (0.4 + pctY * 0.6) * size;
   const ry = Math.min(mo * 0.65, rx * 0.65);
