@@ -150,8 +150,10 @@ footer a { color: var(--accent2); text-decoration: none; }
       <input type="range" id="mouthXSlider" min="20" max="80" value="50" style="width:100%;accent-color:var(--accent2)">
       <label style="font-size:12px;color:var(--text3)">🔵 Size <span id="mouthSizeVal">5</span></label>
       <input type="range" id="mouthSizeSlider" min="1" max="10" value="5" style="width:100%;accent-color:var(--green)">
-      <label style="font-size:12px;color:var(--text3)">👁 Eyes offset <span id="eyeOffsetVal">12</span>%</label>
-      <input type="range" id="eyeOffsetSlider" min="2" max="35" value="12" style="width:100%;accent-color:#a78bfa">
+      <label style="font-size:12px;color:var(--text3)">👁 Eyes above mouth <span id="eyeOffsetVal">12</span>%</label>
+      <input type="range" id="eyeOffsetSlider" min="1" max="40" value="12" step="1" style="width:100%;accent-color:#a78bfa">
+      <label style="font-size:12px;color:var(--text3)">👁 Eye spread <span id="eyeSpreadVal">100</span>%</label>
+      <input type="range" id="eyeSpreadSlider" min="40" max="200" value="100" step="5" style="width:100%;accent-color:#818cf8">
     </div>
   </div>
 </main>
@@ -588,21 +590,25 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
     ctx.restore();
   }
 
-  // 4. BLINK — user controls eye offset above mouth
-  if (blinkClose > 0) {
-    const eyePctY = pctY - eyeOffPct;
-    const eyeBase = xform(W * pctX, H * eyePctY);
-    const eGap = mRx * 0.95;
-    const eRx  = mRx * 0.5;
-    const eRy  = mRx * 0.3 * blinkClose;
+  // 4. BLINK — always draw eye markers (dim when open, dark when blinking)
+  {
+    const eyeSpread = parseFloat(document.getElementById('eyeSpreadSlider').value) / 100;
+    const eyePctY   = pctY - eyeOffPct;
+    const eyeBase   = xform(W * pctX, H * eyePctY);
+    const eGap = mRx * eyeSpread;
+    const eRx  = mRx * 0.52;
+    // Always show faint eye marker so user can position them; full close on blink
+    const eRy  = blinkClose > 0
+      ? mRx * 0.32 * blinkClose   // closing
+      : mRx * 0.04;               // resting — tiny line so user sees where eyes are
 
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.9)';
+    ctx.fillStyle = blinkClose > 0 ? 'rgba(0,0,0,0.9)' : 'rgba(0,0,0,0.25)';
     ctx.beginPath();
-    ctx.ellipse(eyeBase.x - eGap, eyeBase.y, eRx, eRy, tilt, 0, Math.PI*2);
+    ctx.ellipse(eyeBase.x - eGap, eyeBase.y, eRx, Math.max(eRy, 1), tilt, 0, Math.PI*2);
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(eyeBase.x + eGap, eyeBase.y, eRx, eRy, tilt, 0, Math.PI*2);
+    ctx.ellipse(eyeBase.x + eGap, eyeBase.y, eRx, Math.max(eRy, 1), tilt, 0, Math.PI*2);
     ctx.fill();
     ctx.restore();
   }
@@ -621,6 +627,9 @@ mouthSizeSlider.addEventListener('input', () => { mouthSizeValEl.textContent = m
 const eyeOffsetSlider = document.getElementById('eyeOffsetSlider');
 const eyeOffsetValEl  = document.getElementById('eyeOffsetVal');
 eyeOffsetSlider.addEventListener('input', () => { eyeOffsetValEl.textContent = eyeOffsetSlider.value; });
+const eyeSpreadSlider = document.getElementById('eyeSpreadSlider');
+const eyeSpreadValEl  = document.getElementById('eyeSpreadVal');
+eyeSpreadSlider.addEventListener('input', () => { eyeSpreadValEl.textContent = eyeSpreadSlider.value; });;
 
 // Presets
 function applyPreset(v, x, s) {
