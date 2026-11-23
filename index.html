@@ -134,6 +134,10 @@ footer a { color: var(--accent2); text-decoration: none; }
     <div class="btn-row">
       <button class="btn" id="btnNew">📂 New Photo</button>
     </div>
+    <div id="mouthRow" style="display:none; flex-direction:column; gap:6px;">
+      <label style="font-size:12px;color:var(--text3)">👄 Mouth position <span id="mouthVal">72</span>%</label>
+      <input type="range" id="mouthSlider" min="10" max="95" value="72" style="width:100%;accent-color:var(--accent)">
+    </div>
   </div>
 </main>
 <footer>DukesTU · <a href="https://timson974.netlify.app">Portfolio</a></footer>
@@ -188,6 +192,7 @@ photoIn.addEventListener('change', e => {
     resizeCvs();
     drawStatic();
     checkReady();
+    document.getElementById('mouthRow').style.display = 'flex';
   };
   image.src = url;
 });
@@ -204,8 +209,9 @@ function resizeCvs() {
   iX = (cvs.width  - iW) / 2;
   iY = (cvs.height - iH) / 2;
   // Mouth heuristic: horizontal centre, 60% down the image
+  const pct = (document.getElementById('mouthSlider')?.value || 72) / 100;
   mouthCX = cvs.width  * 0.5;
-  mouthCY = cvs.height * 0.72;  // selfie: face lower in frame
+  mouthCY = cvs.height * pct;
   mouthRX = cvs.width  * 0.09;
 }
 
@@ -389,6 +395,14 @@ function draw(dx, dy, mo, energy) {
     ctx.restore();
   }
 }
+
+// Mouth slider
+const mouthSlider = document.getElementById('mouthSlider');
+const mouthValEl  = document.getElementById('mouthVal');
+mouthSlider.addEventListener('input', () => {
+  mouthValEl.textContent = mouthSlider.value;
+  if (img) resizeCvs();
+});
 
 function updateMood(e) {
   if (e > 0.65) { mIco.textContent='🔥'; mTxt.textContent='High energy!'; }
