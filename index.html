@@ -139,6 +139,11 @@ footer a { color: var(--accent2); text-decoration: none; }
       <button class="btn save" id="btnSave" disabled>💾 Save Video</button>
     </div>
     <div id="mouthRow" style="display:none; flex-direction:column; gap:8px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn" id="presetSelfie"   style="flex:1;padding:8px;font-size:12px;">🤳 Selfie</button>
+        <button class="btn" id="presetPortrait" style="flex:1;padding:8px;font-size:12px;">🖼 Portrait</button>
+        <button class="btn" id="presetFull"     style="flex:1;padding:8px;font-size:12px;">🧍 Full body</button>
+      </div>
       <label style="font-size:12px;color:var(--text3)">↕️ Vertical <span id="mouthVal">72</span>%</label>
       <input type="range" id="mouthSlider" min="10" max="95" value="72" style="width:100%;accent-color:var(--accent)">
       <label style="font-size:12px;color:var(--text3)">↔️ Horizontal <span id="mouthXVal">50</span>%</label>
@@ -424,8 +429,19 @@ function loop() {
   tmouth = energy * 20;
   mouth += (tmouth - mouth) * 0.22;
 
+  // Blink
+  blinkT += 0.016;
+  let blinkClose = 0;
+  if (blinkT >= nextBlink) {
+    const phase = blinkT - nextBlink;
+    if (phase < 0.08) blinkClose = phase / 0.08;
+    else if (phase < 0.15) blinkClose = 1;
+    else if (phase < 0.23) blinkClose = 1 - (phase - 0.15) / 0.08;
+    else { blinkClose = 0; blinkT = 0; nextBlink = 2 + Math.random() * 5; }
+  }
+
   // Draw
-  draw(hx, hy, mouth, energy);
+  draw(hx, hy, mouth, energy, blinkClose);
   updateMood(energy);
 }
 
@@ -443,7 +459,7 @@ function proceduralE(t, s) {
 function tempo(s) { return { hiphop:2.8, pop:2.4, chill:1.4, epic:3.2 }[s] || 2; }
 
 // ── DRAW FRAME
-function draw(dx, dy, mo, energy) {
+function draw(dx, dy, mo, energy, blinkClose = 0) {
   ctx.clearRect(0, 0, cvs.width, cvs.height);
 
   // Shared transform params
@@ -494,13 +510,69 @@ function draw(dx, dy, mo, energy) {
 
   if (mo > 0.3 && rx > 1) {
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-    ctx.shadowBlur  = 8;
+    ctx.translate(cx, cy);
+    ctx.rotate(tilt);
+
+    // Dark mouth cavity
+    ctx.shadowColor = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur  = 10;
     ctx.beginPath();
-    ctx.ellipse(cx, cy, rx, ry, tilt, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(10,2,2,0.82)';
+    ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(8,0,0,0.9)';
     ctx.fill();
     ctx.shadowBlur = 0;
+
+    // Teeth — white strip in upper third
+    if (ry > 3) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = 'rgba(240,235,220,0.9)';
+      ctx.fillRect(-rx, -ry, rx * 2, ry * 0.55);
+      // tooth dividers
+      ctx.strokeStyle = 'rgba(180,170,160,0.4)';
+      ctx.lineWidth = 1;
+      for (let i = -1; i <= 1; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * rx * 0.33, -ry);
+        ctx.lineTo(i * rx * 0.33, 0);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Lip outline
+    ctx.beginPath();
+    ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(120,60,60,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // BLINK — draw eyelid strips over eye area
+  if (blinkClose > 0) {
+    const eyeY = cvs.height * pctY * 0.72; // eyes ~72% up from mouth
+    // compute eye position with same transform
+    const eBaseMY = cvs.height * pctY * 0.72;
+    const eRelX = baseMX - pivX;
+    const eRelY = eBaseMY - pivY;
+    const eCx = pivX + (eRelX*cosT - eRelY*sinT)*pScale + dx;
+    const eCy = pivY + (eRelX*sinT + eRelY*cosT)*pScale + dy*0.5;
+    const eyeW = rx * 2.2;
+    const eyeH = rx * 0.55 * blinkClose;
+    // left eye
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.beginPath();
+    ctx.ellipse(eCx - rx * 0.9, eCy, eyeW * 0.38, eyeH, tilt, 0, Math.PI*2);
+    ctx.fill();
+    // right eye
+    ctx.beginPath();
+    ctx.ellipse(eCx + rx * 0.9, eCy, eyeW * 0.38, eyeH, tilt, 0, Math.PI*2);
+    ctx.fill();
     ctx.restore();
   }
 }
@@ -512,18 +584,22 @@ const mouthSizeSlider = document.getElementById('mouthSizeSlider');
 const mouthValEl      = document.getElementById('mouthVal');
 const mouthXValEl     = document.getElementById('mouthXVal');
 const mouthSizeValEl  = document.getElementById('mouthSizeVal');
-mouthSlider.addEventListener('input', () => {
-  mouthValEl.textContent = mouthSlider.value;
-  if (img) resizeCvs();
-});
-mouthXSlider.addEventListener('input', () => {
-  mouthXValEl.textContent = mouthXSlider.value;
-  if (img) resizeCvs();
-});
-mouthSizeSlider.addEventListener('input', () => {
-  mouthSizeValEl.textContent = mouthSizeSlider.value;
-  if (img) resizeCvs();
-});
+mouthSlider.addEventListener('input', () => { mouthValEl.textContent = mouthSlider.value; });
+mouthXSlider.addEventListener('input', () => { mouthXValEl.textContent = mouthXSlider.value; });
+mouthSizeSlider.addEventListener('input', () => { mouthSizeValEl.textContent = mouthSizeSlider.value; });
+
+// Presets
+function applyPreset(v, x, s) {
+  mouthSlider.value = v; mouthValEl.textContent = v;
+  mouthXSlider.value = x; mouthXValEl.textContent = x;
+  mouthSizeSlider.value = s; mouthSizeValEl.textContent = s;
+}
+document.getElementById('presetSelfie').addEventListener('click',   () => applyPreset(72, 50, 6));
+document.getElementById('presetPortrait').addEventListener('click', () => applyPreset(62, 50, 5));
+document.getElementById('presetFull').addEventListener('click',     () => applyPreset(28, 50, 3));
+
+// Blink state
+let blinkT = 0, nextBlink = 3 + Math.random() * 4;
 
 function updateMood(e) {
   if (e > 0.65) { mIco.textContent='🔥'; mTxt.textContent='High energy!'; }
