@@ -552,8 +552,8 @@ function animate() {
   });
 
   // Head motion — smooth sinusoidal driven by beat
-  targetHX = Math.sin(time * 0.7) * 8 * finalEnergy + Math.sin(time * 1.3) * 4;
-  targetHY = Math.sin(time * 0.5) * 5 * finalEnergy;
+  targetHX = Math.sin(time * 0.7) * 20 * finalEnergy + Math.sin(time * 1.3) * 8;
+  targetHY = Math.sin(time * 0.5) * 12 * finalEnergy;
   headX += (targetHX - headX) * 0.08;
   headY += (targetHY - headY) * 0.08;
 
