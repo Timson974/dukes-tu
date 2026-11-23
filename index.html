@@ -478,13 +478,33 @@ function draw(dx, dy, mo, energy) {
   ctx.drawImage(img, iX, iY, iW, iH);
   ctx.restore();
 
-  // 2. Mouth — read sliders live every frame so changes apply instantly
-  const pctY = parseFloat(document.getElementById('mouthSlider').value)    / 100;
-  const pctX = parseFloat(document.getElementById('mouthXSlider').value)   / 100;
+  // 2. Mouth — must follow the face exactly as it moves
+  const pctY = parseFloat(document.getElementById('mouthSlider').value)     / 100;
+  const pctX = parseFloat(document.getElementById('mouthXSlider').value)    / 100;
   const size = parseFloat(document.getElementById('mouthSizeSlider').value) / 5;
-  const cx = cvs.width  * pctX + dx;
-  const cy = cvs.height * pctY + dy;
-  const rx = cvs.width  * 0.038 * (0.4 + pctY * 0.6) * size;
+
+  // Base mouth position in canvas space (same origin as the photo)
+  const baseMX = cvs.width  * pctX;
+  const baseMY = cvs.height * pctY;
+
+  // Apply same transform as the person layer: pivot + tilt + shift
+  // pivot is at (pivotX, pivotY), person shifts by (dx, dy*0.5), tilts by tilt angle
+  const pX = cvs.width * 0.5;
+  const pY = cvs.height * 1.4;
+  const tilt = dx * 0.0012;
+
+  // Rotate baseMX/baseMY around pivot
+  const relX = baseMX - pX;
+  const relY = baseMY - pY;
+  const cosT = Math.cos(tilt), sinT = Math.sin(tilt);
+  const rotX = relX * cosT - relY * sinT;
+  const rotY = relX * sinT + relY * cosT;
+
+  const scale = 1 + energy * 0.012;
+  const cx = pX + (rotX * scale) + dx;
+  const cy = pY + (rotY * scale) + dy * 0.5;
+
+  const rx = cvs.width * 0.038 * (0.4 + pctY * 0.6) * size;
   const ry = Math.min(mo * 0.65, rx * 0.65);
 
   if (mo > 0.3 && rx > 1) {
@@ -492,8 +512,8 @@ function draw(dx, dy, mo, energy) {
     ctx.shadowColor = 'rgba(0,0,0,0.6)';
     ctx.shadowBlur  = 8;
     ctx.beginPath();
-    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(10,2,2,0.80)';
+    ctx.ellipse(cx, cy, rx, ry, tilt, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(10,2,2,0.82)';
     ctx.fill();
     ctx.shadowBlur = 0;
     ctx.restore();
