@@ -139,21 +139,25 @@ footer a { color: var(--accent2); text-decoration: none; }
       <button class="btn save" id="btnSave" disabled>💾 Save Video</button>
     </div>
     <div id="mouthRow" style="display:none; flex-direction:column; gap:8px;">
+      <div style="font-size:12px;color:var(--text3);text-align:center;padding:4px 0;">
+        👆 Tap on the photo to place mouth &amp; eyes
+      </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="btn" id="presetSelfie"   style="flex:1;padding:8px;font-size:12px;">🤳 Selfie</button>
         <button class="btn" id="presetPortrait" style="flex:1;padding:8px;font-size:12px;">🖼 Portrait</button>
         <button class="btn" id="presetFull"     style="flex:1;padding:8px;font-size:12px;">🧍 Full body</button>
       </div>
-      <label style="font-size:12px;color:var(--text3)">↕️ Vertical <span id="mouthVal">72</span>%</label>
-      <input type="range" id="mouthSlider" min="10" max="95" value="72" style="width:100%;accent-color:var(--accent)">
-      <label style="font-size:12px;color:var(--text3)">↔️ Horizontal <span id="mouthXVal">50</span>%</label>
-      <input type="range" id="mouthXSlider" min="20" max="80" value="50" style="width:100%;accent-color:var(--accent2)">
       <label style="font-size:12px;color:var(--text3)">🔵 Size <span id="mouthSizeVal">5</span></label>
       <input type="range" id="mouthSizeSlider" min="1" max="10" value="5" style="width:100%;accent-color:var(--green)">
-      <label style="font-size:12px;color:var(--text3)">👁 Eyes above mouth <span id="eyeOffsetVal">12</span>%</label>
-      <input type="range" id="eyeOffsetSlider" min="1" max="40" value="12" step="1" style="width:100%;accent-color:#a78bfa">
-      <label style="font-size:12px;color:var(--text3)">👁 Eye spread <span id="eyeSpreadVal">100</span>%</label>
-      <input type="range" id="eyeSpreadSlider" min="40" max="200" value="100" step="5" style="width:100%;accent-color:#818cf8">
+      <!-- hidden sliders kept for JS compatibility -->
+      <input type="range" id="mouthSlider"    min="10" max="95" value="72" style="display:none">
+      <input type="range" id="mouthXSlider"   min="20" max="80" value="50" style="display:none">
+      <input type="range" id="eyeOffsetSlider" min="1" max="40" value="12" step="1" style="display:none">
+      <input type="range" id="eyeSpreadSlider" min="40" max="200" value="100" step="5" style="display:none">
+      <span id="mouthVal" style="display:none">72</span>
+      <span id="mouthXVal" style="display:none">50</span>
+      <span id="eyeOffsetVal" style="display:none">12</span>
+      <span id="eyeSpreadVal" style="display:none">100</span>
     </div>
   </div>
 </main>
@@ -624,22 +628,47 @@ const mouthSizeValEl  = document.getElementById('mouthSizeVal');
 mouthSlider.addEventListener('input', () => { mouthValEl.textContent = mouthSlider.value; });
 mouthXSlider.addEventListener('input', () => { mouthXValEl.textContent = mouthXSlider.value; });
 mouthSizeSlider.addEventListener('input', () => { mouthSizeValEl.textContent = mouthSizeSlider.value; });
-const eyeOffsetSlider = document.getElementById('eyeOffsetSlider');
-const eyeOffsetValEl  = document.getElementById('eyeOffsetVal');
-eyeOffsetSlider.addEventListener('input', () => { eyeOffsetValEl.textContent = eyeOffsetSlider.value; });
-const eyeSpreadSlider = document.getElementById('eyeSpreadSlider');
-const eyeSpreadValEl  = document.getElementById('eyeSpreadVal');
-eyeSpreadSlider.addEventListener('input', () => { eyeSpreadValEl.textContent = eyeSpreadSlider.value; });;
+// Tap on canvas → place mouth at that position
+cvs.addEventListener('click', e => {
+  if (!img.complete || !img.naturalWidth) return;
+  const rect = cvs.getBoundingClientRect();
+  const tx = (e.clientX - rect.left) / rect.width;
+  const ty = (e.clientY - rect.top)  / rect.height;
+  // Convert canvas display coords to actual canvas pixel %
+  const pxX = tx * 100;
+  const pxY = ty * 100;
+  // Clamp to slider ranges
+  const clampedX = Math.max(20, Math.min(80, Math.round(pxX)));
+  const clampedY = Math.max(10, Math.min(95, Math.round(pxY)));
+  mouthSlider.value  = clampedY; mouthValEl.textContent  = clampedY;
+  mouthXSlider.value = clampedX; mouthXValEl.textContent = clampedX;
+});
+cvs.addEventListener('touchend', e => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  const rect = cvs.getBoundingClientRect();
+  const tx = (t.clientX - rect.left) / rect.width;
+  const ty = (t.clientY - rect.top)  / rect.height;
+  const clampedX = Math.max(20, Math.min(80, Math.round(tx * 100)));
+  const clampedY = Math.max(10, Math.min(95, Math.round(ty * 100)));
+  mouthSlider.value  = clampedY; mouthValEl.textContent  = clampedY;
+  mouthXSlider.value = clampedX; mouthXValEl.textContent = clampedX;
+}, { passive: false });;
 
 // Presets
-function applyPreset(v, x, s) {
+function applyPreset(v, x, s, eyeOff, eyeSpr) {
   mouthSlider.value = v; mouthValEl.textContent = v;
   mouthXSlider.value = x; mouthXValEl.textContent = x;
   mouthSizeSlider.value = s; mouthSizeValEl.textContent = s;
+  eyeOffsetSlider.value = eyeOff; eyeOffsetValEl.textContent = eyeOff;
+  eyeSpreadSlider.value = eyeSpr; eyeSpreadValEl.textContent = eyeSpr;
 }
-document.getElementById('presetSelfie').addEventListener('click',   () => applyPreset(72, 50, 6));
-document.getElementById('presetPortrait').addEventListener('click', () => applyPreset(62, 50, 5));
-document.getElementById('presetFull').addEventListener('click',     () => applyPreset(28, 50, 3));
+// Selfie: face fills frame, mouth ~72%, eyes ~8% above, spread ~75%
+document.getElementById('presetSelfie').addEventListener('click',   () => applyPreset(72, 50, 6, 8, 75));
+// Portrait: half-body, mouth ~62%
+document.getElementById('presetPortrait').addEventListener('click', () => applyPreset(62, 50, 5, 10, 85));
+// Full body: small face, mouth ~35%
+document.getElementById('presetFull').addEventListener('click',     () => applyPreset(35, 50, 3, 7, 70));
 
 // Blink state
 let blinkT = 0, nextBlink = 3 + Math.random() * 4;
