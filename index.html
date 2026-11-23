@@ -460,118 +460,125 @@ function tempo(s) { return { hiphop:2.8, pop:2.4, chill:1.4, epic:3.2 }[s] || 2;
 
 // ── DRAW FRAME
 function draw(dx, dy, mo, energy, blinkClose = 0) {
-  ctx.clearRect(0, 0, cvs.width, cvs.height);
+  const W = cvs.width, H = cvs.height;
+  ctx.clearRect(0, 0, W, H);
 
-  // Shared transform params
-  const pivX = cvs.width  * 0.5;
-  const pivY = cvs.height * 1.4;
+  // Shared sway transform
+  const pivX  = W * 0.5;
+  const pivY  = H * 1.4;
   const tilt  = dx * 0.0012;
-  const pScale = 1 + energy * 0.012;
+  const pScl  = 1 + energy * 0.012;
+  const cosT  = Math.cos(tilt);
+  const sinT  = Math.sin(tilt);
 
-  // 1. BACKGROUND — static, zoomed 12% so edges don't show
+  // Helper: transform a canvas point (bx,by) through the person's motion
+  function xform(bx, by) {
+    const rx = bx - pivX, ry = by - pivY;
+    return {
+      x: pivX + (rx*cosT - ry*sinT)*pScl + dx,
+      y: pivY + (rx*sinT + ry*cosT)*pScl + dy*0.5
+    };
+  }
+
+  // 1. BACKGROUND — zoomed 12%, static
   ctx.save();
-  const bgS = 1.12;
-  ctx.drawImage(img, iX - iW*(bgS-1)/2, iY - iH*(bgS-1)/2, iW*bgS, iH*bgS);
+  ctx.drawImage(img, iX - iW*0.06, iY - iH*0.06, iW*1.12, iH*1.12);
   ctx.restore();
 
-  // 2. PERSON — shifted+tilted, faded edges via gradient mask
+  // 2. PERSON — same photo with sway
   ctx.save();
-  ctx.translate(pivX + dx, pivY + dy * 0.5);
+  ctx.translate(pivX + dx, pivY + dy*0.5);
   ctx.rotate(tilt);
-  ctx.scale(pScale, pScale);
+  ctx.scale(pScl, pScl);
   ctx.translate(-pivX, -pivY);
   ctx.drawImage(img, iX, iY, iW, iH);
   ctx.restore();
 
-  // Soft vignette on edges to hide seam
-  const fade = cvs.width * 0.18;
-  const gL = ctx.createLinearGradient(0, 0, fade, 0);
-  gL.addColorStop(0, 'rgba(0,0,0,0.9)'); gL.addColorStop(1, 'rgba(0,0,0,0)');
-  const gR = ctx.createLinearGradient(cvs.width, 0, cvs.width - fade, 0);
-  gR.addColorStop(0, 'rgba(0,0,0,0.9)'); gR.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = gL; ctx.fillRect(0, 0, fade, cvs.height);
-  ctx.fillStyle = gR; ctx.fillRect(cvs.width - fade, 0, fade, cvs.height);
+  // Edge vignette
+  const fade = W * 0.16;
+  const gL = ctx.createLinearGradient(0,0,fade,0);
+  gL.addColorStop(0,'rgba(0,0,0,0.88)'); gL.addColorStop(1,'rgba(0,0,0,0)');
+  const gR = ctx.createLinearGradient(W,0,W-fade,0);
+  gR.addColorStop(0,'rgba(0,0,0,0.88)'); gR.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle = gL; ctx.fillRect(0,0,fade,H);
+  ctx.fillStyle = gR; ctx.fillRect(W-fade,0,fade,H);
 
-  // 3. MOUTH — apply identical transform so it tracks the face
+  // Read sliders every frame
   const pctY = parseFloat(document.getElementById('mouthSlider').value)     / 100;
   const pctX = parseFloat(document.getElementById('mouthXSlider').value)    / 100;
-  const size = parseFloat(document.getElementById('mouthSizeSlider').value) / 5;
+  const size = parseFloat(document.getElementById('mouthSizeSlider').value) / 5; // 0.2–2
 
-  const baseMX = cvs.width  * pctX;
-  const baseMY = cvs.height * pctY;
-  const relX = baseMX - pivX;
-  const relY = baseMY - pivY;
-  const cosT = Math.cos(tilt), sinT = Math.sin(tilt);
-  const cx = pivX + (relX*cosT - relY*sinT)*pScale + dx;
-  const cy = pivY + (relX*sinT + relY*cosT)*pScale + dy*0.5;
+  // Mouth centre in canvas coords → transformed
+  const mBase = xform(W * pctX, H * pctY);
+  const mCx = mBase.x, mCy = mBase.y;
+  const mRx = W * 0.042 * size;          // size slider directly controls radius
+  const mRy = Math.min(mo * 0.7, mRx * 0.7);
 
-  const rx = cvs.width * 0.038 * (0.4 + pctY * 0.6) * size;
-  const ry = Math.min(mo * 0.65, rx * 0.65);
-
-  if (mo > 0.3 && rx > 1) {
+  // 3. MOUTH
+  if (mo > 0.2 && mRx > 1 && mRy > 0.5) {
     ctx.save();
-    ctx.translate(cx, cy);
+    ctx.translate(mCx, mCy);
     ctx.rotate(tilt);
 
-    // Dark mouth cavity
-    ctx.shadowColor = 'rgba(0,0,0,0.7)';
-    ctx.shadowBlur  = 10;
+    // Cavity
     ctx.beginPath();
-    ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(8,0,0,0.9)';
+    ctx.ellipse(0, 0, mRx, mRy, 0, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(10,2,2,0.92)';
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur = 8;
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // Teeth — white strip in upper third
-    if (ry > 3) {
+    // Teeth (clipped inside ellipse)
+    if (mRy > 4) {
       ctx.save();
       ctx.beginPath();
-      ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, mRx, mRy, 0, 0, Math.PI*2);
       ctx.clip();
-      ctx.fillStyle = 'rgba(240,235,220,0.9)';
-      ctx.fillRect(-rx, -ry, rx * 2, ry * 0.55);
-      // tooth dividers
-      ctx.strokeStyle = 'rgba(180,170,160,0.4)';
+      // upper teeth strip
+      ctx.fillStyle = 'rgba(245,240,230,0.95)';
+      ctx.fillRect(-mRx, -mRy, mRx*2, mRy*0.6);
+      // dividers
+      ctx.strokeStyle = 'rgba(190,180,165,0.5)';
       ctx.lineWidth = 1;
-      for (let i = -1; i <= 1; i++) {
+      [-0.34, 0, 0.34].forEach(f => {
         ctx.beginPath();
-        ctx.moveTo(i * rx * 0.33, -ry);
-        ctx.lineTo(i * rx * 0.33, 0);
+        ctx.moveTo(f*mRx, -mRy);
+        ctx.lineTo(f*mRx, 0);
         ctx.stroke();
-      }
+      });
       ctx.restore();
     }
 
-    // Lip outline
+    // Lip edge
     ctx.beginPath();
-    ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(120,60,60,0.5)';
+    ctx.ellipse(0, 0, mRx, mRy, 0, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(140,70,70,0.55)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
     ctx.restore();
   }
 
-  // BLINK — draw eyelid strips over eye area
+  // 4. BLINK — eyes sit ~55% of mouth-to-top distance above mouth
   if (blinkClose > 0) {
-    const eyeY = cvs.height * pctY * 0.72; // eyes ~72% up from mouth
-    // compute eye position with same transform
-    const eBaseMY = cvs.height * pctY * 0.72;
-    const eRelX = baseMX - pivX;
-    const eRelY = eBaseMY - pivY;
-    const eCx = pivX + (eRelX*cosT - eRelY*sinT)*pScale + dx;
-    const eCy = pivY + (eRelX*sinT + eRelY*cosT)*pScale + dy*0.5;
-    const eyeW = rx * 2.2;
-    const eyeH = rx * 0.55 * blinkClose;
-    // left eye
+    // Eye row Y: pctY minus ~15% of canvas height above mouth
+    const eyePctY = pctY - 0.14;
+    const eyeBase = xform(W * pctX, H * eyePctY);
+    const eCy  = eyeBase.y;
+    const eGap = mRx * 1.0;   // half distance between eye centres
+    const eRx  = mRx * 0.52;
+    const eRy  = mRx * 0.28 * blinkClose;
+
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillStyle = 'rgba(0,0,0,0.88)';
+    // left eye
     ctx.beginPath();
-    ctx.ellipse(eCx - rx * 0.9, eCy, eyeW * 0.38, eyeH, tilt, 0, Math.PI*2);
+    ctx.ellipse(eyeBase.x - eGap, eCy, eRx, eRy, tilt, 0, Math.PI*2);
     ctx.fill();
     // right eye
     ctx.beginPath();
-    ctx.ellipse(eCx + rx * 0.9, eCy, eyeW * 0.38, eyeH, tilt, 0, Math.PI*2);
+    ctx.ellipse(eyeBase.x + eGap, eCy, eRx, eRy, tilt, 0, Math.PI*2);
     ctx.fill();
     ctx.restore();
   }
