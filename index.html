@@ -446,38 +446,58 @@ function tempo(s) { return { hiphop:2.8, pop:2.4, chill:1.4, epic:3.2 }[s] || 2;
 function draw(dx, dy, mo, energy) {
   ctx.clearRect(0, 0, cvs.width, cvs.height);
 
-  // 1. Draw photo shifted (head bob)
-  const scale = 1 + energy * 0.015;
+  // 1. Draw photo — rotate slightly around bottom-centre for "head tilt" feel
+  const scale = 1 + energy * 0.02;
+  const tilt  = dx * 0.004; // slight rotation from side-to-side movement
+  const pivotX = cvs.width  * 0.5;
+  const pivotY = cvs.height * 1.2; // pivot below frame = top sways more than bottom
   ctx.save();
-  ctx.translate(cvs.width/2 + dx, cvs.height/2 + dy);
+  ctx.translate(pivotX + dx * 0.5, pivotY + dy * 0.3);
+  ctx.rotate(tilt);
   ctx.scale(scale, scale);
-  ctx.translate(-cvs.width/2, -cvs.height/2);
+  ctx.translate(-pivotX, -pivotY);
   ctx.drawImage(img, iX, iY, iW, iH);
   ctx.restore();
 
-  // 2. Mouth overlay — dark ellipse, threshold lowered so it shows earlier
-  if (mo > 0.3) {
-    const cx = mouthCX + dx;
-    const cy = mouthCY + dy;
-    const rx = mouthRX;
-    const ry = Math.min(mo * 0.6, rx * 0.6);
+  // 2. Mouth — read sliders live every frame so changes apply instantly
+  const pctY = parseFloat(document.getElementById('mouthSlider').value)    / 100;
+  const pctX = parseFloat(document.getElementById('mouthXSlider').value)   / 100;
+  const size = parseFloat(document.getElementById('mouthSizeSlider').value) / 5;
+  const cx = cvs.width  * pctX + dx;
+  const cy = cvs.height * pctY + dy;
+  const rx = cvs.width  * 0.038 * (0.4 + pctY * 0.6) * size;
+  const ry = Math.min(mo * 0.65, rx * 0.65);
+
+  if (mo > 0.3 && rx > 1) {
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.6)';
     ctx.shadowBlur  = 8;
     ctx.beginPath();
     ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(10,2,2,0.75)';
+    ctx.fillStyle = 'rgba(10,2,2,0.80)';
     ctx.fill();
     ctx.shadowBlur = 0;
     ctx.restore();
   }
 }
 
-// Mouth slider
-const mouthSlider = document.getElementById('mouthSlider');
-const mouthValEl  = document.getElementById('mouthVal');
+// Mouth sliders
+const mouthSlider     = document.getElementById('mouthSlider');
+const mouthXSlider    = document.getElementById('mouthXSlider');
+const mouthSizeSlider = document.getElementById('mouthSizeSlider');
+const mouthValEl      = document.getElementById('mouthVal');
+const mouthXValEl     = document.getElementById('mouthXVal');
+const mouthSizeValEl  = document.getElementById('mouthSizeVal');
 mouthSlider.addEventListener('input', () => {
   mouthValEl.textContent = mouthSlider.value;
+  if (img) resizeCvs();
+});
+mouthXSlider.addEventListener('input', () => {
+  mouthXValEl.textContent = mouthXSlider.value;
+  if (img) resizeCvs();
+});
+mouthSizeSlider.addEventListener('input', () => {
+  mouthSizeValEl.textContent = mouthSizeSlider.value;
   if (img) resizeCvs();
 });
 
