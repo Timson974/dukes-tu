@@ -425,8 +425,9 @@ function loop() {
   });
 
   // Head motion — natural sway (wider arc for realistic head turn)
-  thx = Math.sin(t * 0.9)  * W * 0.045 * energy + Math.sin(t * 1.7) * W * 0.012;
-  thy = Math.sin(t * 0.6)  * H * 0.018 * energy;
+  const cW = cvs.width, cH = cvs.height;
+  thx = Math.sin(t * 0.9)  * cW * 0.045 * energy + Math.sin(t * 1.7) * cW * 0.012;
+  thy = Math.sin(t * 0.6)  * cH * 0.018 * energy;
   hx += (thx - hx) * 0.07;
   hy += (thy - hy) * 0.07;
 
