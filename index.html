@@ -246,6 +246,18 @@ function drawStatic() {
   if (!img) return;
   ctx.clearRect(0, 0, cvs.width, cvs.height);
   ctx.drawImage(img, iX, iY, iW, iH);
+  // Show mouth target cross so user can see where to tap
+  const pctY = parseFloat(document.getElementById('mouthSlider')?.value || 72) / 100;
+  const pctX = parseFloat(document.getElementById('mouthXSlider')?.value || 50) / 100;
+  const cx = cvs.width * pctX, cy = cvs.height * pctY;
+  const r = 14;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,80,80,0.9)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(cx-r,cy); ctx.lineTo(cx+r,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,cy-r); ctx.lineTo(cx,cy+r); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, r*0.4, 0, Math.PI*2); ctx.stroke();
+  ctx.restore();
 }
 
 window.addEventListener('resize', () => { if (img) { resizeCvs(); if (!playing) drawStatic(); } });
@@ -525,8 +537,8 @@ function loop() {
   });
 
   // Head motion — natural sway (wider arc for realistic head turn)
-  thx = Math.sin(t * 0.9)  * 18 * energy + Math.sin(t * 1.7) * 6;
-  thy = Math.sin(t * 0.6)  * 10 * energy;
+  thx = Math.sin(t * 0.9)  * 5 * energy + Math.sin(t * 1.7) * 2;
+  thy = Math.sin(t * 0.6)  * 2 * energy;
   hx += (thx - hx) * 0.07;
   hy += (thy - hy) * 0.07;
 
@@ -572,7 +584,7 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
   const pivX  = W * 0.5;
   const pivY  = H * 1.4;
   const tilt  = dx * 0.006;      // ±~5° at full sway
-  const pScl  = 1 + energy * 0.012;
+  const pScl  = 1 + energy * 0.004;
   const cosT  = Math.cos(tilt);
   const sinT  = Math.sin(tilt);
 
