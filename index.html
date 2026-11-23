@@ -520,62 +520,68 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
   const mRx = W * 0.052 * size;    // horizontal half-width of mouth
   const openH = mo * mRx * 0.9;    // how wide open vertically (driven by music)
 
-  // 3. MOUTH — realistic lips, cavity drawn first then lips on top
+  // 3. MOUTH — lips shape, all contained within mRx × (mRx*0.6) box
   if (mRx > 2) {
     ctx.save();
     ctx.translate(mCx, mCy);
     ctx.rotate(tilt);
 
-    const lipThick = mRx * 0.24;
-    const openY    = Math.max(openH, 0);
+    const L  = mRx * 0.24;             // lip thickness
+    // opening: 0 = closed, max = L*2 (capped hard so it never grows huge)
+    const op = Math.min(mo * L * 2.5, L * 2.2);
 
-    // A. Dark cavity / teeth — drawn first, lips cover the edges
-    if (openY > 1) {
-      ctx.save();
-      // clip region = gap between lips
+    // Clip everything to a safe bounding ellipse so nothing escapes
+    ctx.beginPath();
+    ctx.ellipse(0, L*0.3, mRx * 1.05, L * 2.8, 0, 0, Math.PI*2);
+    ctx.clip();
+
+    // A. Cavity (dark interior, only when open)
+    if (op > 1) {
+      ctx.fillStyle = '#0a0101';
       ctx.beginPath();
-      ctx.ellipse(0, openY * 0.3, mRx * 0.82, openY * 0.5 + lipThick * 0.6, 0, 0, Math.PI*2);
-      ctx.clip();
-      // cavity fill
-      ctx.fillStyle = '#080000';
-      ctx.fillRect(-mRx, -lipThick, mRx*2, openY + lipThick*2);
-      // teeth strip (top portion only)
-      if (openY > lipThick * 1.2) {
+      ctx.ellipse(0, L*0.5, mRx*0.78, op*0.5 + L*0.3, 0, 0, Math.PI*2);
+      ctx.fill();
+
+      // Teeth — top strip inside cavity
+      if (op > L * 0.8) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(0, L*0.5, mRx*0.78, op*0.5 + L*0.3, 0, 0, Math.PI*2);
+        ctx.clip();
         ctx.fillStyle = 'rgba(245,240,228,0.95)';
-        ctx.fillRect(-mRx*0.72, -lipThick*0.1, mRx*1.44, Math.min(openY*0.4, lipThick*1.5));
-        // tooth dividers
+        ctx.fillRect(-mRx*0.72, -L*0.1, mRx*1.44, op*0.38 + L*0.2);
         ctx.strokeStyle = 'rgba(200,185,165,0.5)';
         ctx.lineWidth = 0.8;
         [-0.36, 0, 0.36].forEach(f => {
           ctx.beginPath();
-          ctx.moveTo(f*mRx*0.72, -lipThick*0.1);
-          ctx.lineTo(f*mRx*0.72, Math.min(openY*0.36, lipThick*1.4));
+          ctx.moveTo(f*mRx*0.72, -L*0.1);
+          ctx.lineTo(f*mRx*0.72, op*0.34 + L*0.1);
           ctx.stroke();
         });
+        ctx.restore();
       }
-      ctx.restore();
     }
 
-    // B. Upper lip — Cupid's bow, drawn on top of cavity
+    // B. Upper lip (Cupid's bow)
     ctx.beginPath();
     ctx.moveTo(-mRx, 0);
-    ctx.bezierCurveTo(-mRx*0.6, -lipThick*1.5,  -mRx*0.18, -lipThick*2.0,   0, -lipThick*1.0);
-    ctx.bezierCurveTo( mRx*0.18, -lipThick*2.0,   mRx*0.6,  -lipThick*1.5,   mRx, 0);
-    ctx.bezierCurveTo( mRx*0.5,   lipThick*0.5,  -mRx*0.5,   lipThick*0.5,  -mRx, 0);
+    ctx.bezierCurveTo(-mRx*0.6, -L*1.4,  -mRx*0.18, -L*1.9,   0, -L*0.95);
+    ctx.bezierCurveTo( mRx*0.18, -L*1.9,   mRx*0.6,  -L*1.4,   mRx, 0);
+    ctx.bezierCurveTo( mRx*0.5,   L*0.45, -mRx*0.5,   L*0.45, -mRx, 0);
     ctx.fillStyle = 'rgba(200,115,115,0.93)';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(145,65,65,0.55)';
+    ctx.strokeStyle = 'rgba(140,60,60,0.5)';
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // C. Lower lip
+    // C. Lower lip (drops by op)
     ctx.beginPath();
     ctx.moveTo(-mRx, 0);
-    ctx.bezierCurveTo(-mRx*0.5, openY + lipThick*1.7,  mRx*0.5, openY + lipThick*1.7,  mRx, 0);
-    ctx.bezierCurveTo( mRx*0.5,  lipThick*0.4,         -mRx*0.5, lipThick*0.4,          -mRx, 0);
+    ctx.bezierCurveTo(-mRx*0.5, op + L*1.6,  mRx*0.5, op + L*1.6,  mRx, 0);
+    ctx.bezierCurveTo( mRx*0.5,  L*0.4,      -mRx*0.5, L*0.4,       -mRx, 0);
     ctx.fillStyle = 'rgba(190,105,105,0.90)';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(145,65,65,0.55)';
+    ctx.strokeStyle = 'rgba(140,60,60,0.5)';
     ctx.lineWidth = 1;
     ctx.stroke();
 
