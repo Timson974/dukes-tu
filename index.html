@@ -5,466 +5,255 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>DukesTU — Talking Photo</title>
 <meta name="theme-color" content="#0a0c14">
-<meta name="description" content="Bring your photo to life — head moves, lips sync to music">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>
 :root {
-  --bg: #0a0c14;
-  --surface: #13151f;
-  --surface2: #1a1d2e;
-  --border: #252840;
-  --accent: #6366f1;
-  --accent2: #a78bfa;
-  --text: #e2e8f0;
-  --text2: #94a3b8;
-  --text3: #64748b;
-  --green: #10b981;
-  --red: #ef4444;
-  --radius: 16px;
+  --bg: #0a0c14; --surface: #13151f; --surface2: #1a1d2e;
+  --border: #252840; --accent: #6366f1; --accent2: #a78bfa;
+  --text: #e2e8f0; --text2: #94a3b8; --text3: #64748b;
+  --green: #10b981; --red: #ef4444; --radius: 16px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Inter', system-ui, sans-serif;
-  min-height: 100dvh;
-  display: flex; flex-direction: column;
-  overflow-x: hidden;
-}
+body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; min-height: 100dvh; display: flex; flex-direction: column; }
 
-/* NAV */
 nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 20px; height: 56px;
-  background: rgba(10,12,20,.95);
-  backdrop-filter: blur(12px);
+  background: rgba(10,12,20,.95); backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
-.nav-logo { font-size: 18px; font-weight: 700; letter-spacing: -.5px; }
+.nav-logo { font-size: 18px; font-weight: 700; }
 .nav-logo span { color: var(--accent2); }
-.nav-badge {
-  font-size: 11px; font-weight: 600; letter-spacing: .05em;
-  background: var(--accent); color: #fff;
-  padding: 3px 10px; border-radius: 20px; text-transform: uppercase;
-}
+.nav-badge { font-size: 11px; font-weight: 600; background: var(--accent); color: #fff; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; }
 
-/* MAIN */
-main {
-  margin-top: 56px;
-  flex: 1;
-  display: flex; flex-direction: column; align-items: center;
-  padding: 24px 16px 48px;
-  gap: 20px;
-}
+main { margin-top: 56px; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 20px 16px 48px; gap: 16px; }
 
-/* UPLOAD CARDS */
-.upload-grid {
-  width: 100%; max-width: 480px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-}
+.upload-grid { width: 100%; max-width: 480px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .upload-card {
-  background: var(--surface);
-  border: 2px dashed var(--border);
-  border-radius: var(--radius);
-  padding: 20px 12px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color .2s, background .2s;
-  position: relative; overflow: hidden;
+  background: var(--surface); border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 20px 12px; text-align: center; cursor: pointer; transition: border-color .2s;
+  position: relative;
 }
-.upload-card:hover, .upload-card.has-file { border-color: var(--accent); }
-.upload-card.has-file { background: rgba(99,102,241,.08); border-style: solid; }
+.upload-card:hover, .upload-card.ok { border-color: var(--accent); border-style: solid; background: rgba(99,102,241,.08); }
 .upload-card input { display: none; }
-.upload-card .icon { font-size: 32px; margin-bottom: 8px; }
-.upload-card .label { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-.upload-card .hint { font-size: 11px; color: var(--text3); }
-.upload-card .check {
-  position: absolute; top: 8px; right: 8px;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--green);
-  display: none; align-items: center; justify-content: center;
-  font-size: 11px;
-}
-.upload-card.has-file .check { display: flex; }
+.upload-card .ico { font-size: 30px; margin-bottom: 6px; }
+.upload-card .lbl { font-size: 13px; font-weight: 600; }
+.upload-card .hint { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.check { position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; border-radius: 50%; background: var(--green); display: none; align-items: center; justify-content: center; font-size: 10px; }
+.upload-card.ok .check { display: flex; }
 
-/* STAGE */
-.stage-wrap {
-  width: 100%; max-width: 480px;
-  position: relative;
-}
-.stage {
-  width: 100%;
-  aspect-ratio: 3/4;
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: #000;
-  position: relative;
-  box-shadow: 0 20px 60px rgba(0,0,0,.7);
-}
-#bgCanvas, #faceCanvas {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-}
-#bgCanvas { z-index: 1; }
-#faceCanvas { z-index: 2; }
+.song-row { width: 100%; max-width: 480px; }
+.song-label { font-size: 11px; color: var(--text3); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 8px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); font-size: 13px; color: var(--text2); cursor: pointer; transition: all .15s; }
+.chip:hover, .chip.on { border-color: var(--accent); color: var(--accent2); background: rgba(99,102,241,.1); }
 
-.stage-placeholder {
-  position: absolute; inset: 0; z-index: 3;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 12px;
-  color: var(--text3);
-}
-.stage-placeholder.hidden { display: none; }
-.stage-placeholder .big-icon { font-size: 56px; }
-.stage-placeholder p { font-size: 14px; }
+.stage-wrap { width: 100%; max-width: 480px; }
+.stage { width: 100%; aspect-ratio: 3/4; border-radius: var(--radius); overflow: hidden; background: #000; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.7); }
+#cvs { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--text3); font-size: 14px; }
+.ph .big { font-size: 52px; }
+.ph.gone { display: none; }
 
-/* VISUALIZER */
-.visualizer {
-  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
-  display: flex; align-items: flex-end; gap: 3px; z-index: 4;
-  height: 32px;
-}
-.vis-bar {
-  width: 4px; border-radius: 2px;
-  background: var(--accent2);
-  height: 4px;
-  transition: height .05s;
-}
+.vis { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: flex-end; gap: 3px; height: 30px; z-index: 2; }
+.vb { width: 4px; border-radius: 2px; background: var(--accent2); height: 4px; }
 
-/* CONTROLS */
-.controls {
-  width: 100%; max-width: 480px;
-  display: flex; flex-direction: column; gap: 12px;
-}
+.controls { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 10px; }
+.mood { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text2); }
+.mood-ico { font-size: 20px; }
 .btn-row { display: flex; gap: 10px; }
-.btn {
-  flex: 1; padding: 14px 16px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface2);
-  color: var(--text); font-size: 14px; font-weight: 600;
-  cursor: pointer; transition: background .15s, border-color .15s;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-}
+.btn { flex: 1; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface2); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
 .btn:hover:not(:disabled) { background: var(--surface); border-color: var(--accent); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn.primary:hover:not(:disabled) { opacity: .85; }
 .btn.stop { background: var(--red); border-color: var(--red); color: #fff; }
-.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
 
-/* SONG SELECTOR */
-.song-row {
-  display: flex; flex-direction: column; gap: 8px;
-}
-.song-label { font-size: 12px; color: var(--text3); font-weight: 500; letter-spacing: .05em; text-transform: uppercase; }
-.song-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-.chip {
-  padding: 6px 14px; border-radius: 20px;
-  border: 1px solid var(--border);
-  background: var(--surface2);
-  font-size: 13px; color: var(--text2);
-  cursor: pointer; transition: all .15s;
-}
-.chip:hover, .chip.active { border-color: var(--accent); color: var(--accent2); background: rgba(99,102,241,.1); }
-
-/* MOOD INDICATOR */
-.mood-row {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 13px; color: var(--text2);
-}
-.mood-icon { font-size: 20px; }
-
-/* PROCESSING */
-.processing {
-  display: none; position: fixed; inset: 0; z-index: 200;
-  background: rgba(10,12,20,.9); backdrop-filter: blur(8px);
-  flex-direction: column; align-items: center; justify-content: center; gap: 16px;
-}
-.processing.active { display: flex; }
-.spinner {
-  width: 44px; height: 44px;
-  border: 3px solid var(--border); border-top-color: var(--accent);
-  border-radius: 50%; animation: spin .8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.proc-text { font-size: 15px; color: var(--text2); }
-
-footer {
-  text-align: center; padding: 20px;
-  font-size: 12px; color: var(--text3);
-  border-top: 1px solid var(--border);
-}
+footer { text-align: center; padding: 16px; font-size: 12px; color: var(--text3); border-top: 1px solid var(--border); }
 footer a { color: var(--accent2); text-decoration: none; }
 </style>
 </head>
 <body>
-
 <nav>
   <div class="nav-logo">Dukes<span>TU</span></div>
   <div class="nav-badge">Talking Photo</div>
 </nav>
 
 <main>
-  <!-- UPLOAD -->
   <div class="upload-grid">
-    <div class="upload-card" id="photoCard" onclick="document.getElementById('photoInput').click()">
+    <div class="upload-card" id="photoCard" onclick="document.getElementById('photoIn').click()">
       <div class="check">✓</div>
-      <div class="icon">🖼️</div>
-      <div class="label">Photo</div>
+      <div class="ico">🖼️</div>
+      <div class="lbl">Photo</div>
       <div class="hint">Portrait works best</div>
-      <input type="file" id="photoInput" accept="image/*">
+      <input type="file" id="photoIn" accept="image/*">
     </div>
-    <div class="upload-card" id="audioCard" onclick="document.getElementById('audioInput').click()">
+    <div class="upload-card" id="audioCard" onclick="document.getElementById('audioIn').click()">
       <div class="check">✓</div>
-      <div class="icon">🎵</div>
-      <div class="label">Your Music</div>
+      <div class="ico">🎵</div>
+      <div class="lbl">Your Music</div>
       <div class="hint">MP3, WAV, M4A</div>
-      <input type="file" id="audioInput" accept="audio/*">
+      <input type="file" id="audioIn" accept="audio/*">
     </div>
   </div>
 
-  <!-- SONG PRESETS -->
-  <div class="controls" style="max-width:480px;width:100%">
-    <div class="song-row">
-      <div class="song-label">Or pick a preset</div>
-      <div class="song-chips">
-        <div class="chip" data-song="hiphop">🎤 Hip-hop</div>
-        <div class="chip" data-song="pop">💃 Pop</div>
-        <div class="chip" data-song="chill">🌙 Chill</div>
-        <div class="chip" data-song="epic">🔥 Epic</div>
-      </div>
+  <div class="song-row">
+    <div class="song-label">Or pick a preset beat</div>
+    <div class="chips">
+      <div class="chip" data-s="hiphop">🎤 Hip-hop</div>
+      <div class="chip" data-s="pop">💃 Pop</div>
+      <div class="chip" data-s="chill">🌙 Chill</div>
+      <div class="chip" data-s="epic">🔥 Epic</div>
     </div>
   </div>
 
-  <!-- STAGE -->
   <div class="stage-wrap">
     <div class="stage">
-      <canvas id="bgCanvas"></canvas>
-      <canvas id="faceCanvas"></canvas>
-      <div class="stage-placeholder" id="placeholder">
-        <div class="big-icon">👤</div>
-        <p>Upload a photo to start</p>
-      </div>
-      <div class="visualizer" id="visualizer">
-        <div class="vis-bar"></div><div class="vis-bar"></div>
-        <div class="vis-bar"></div><div class="vis-bar"></div>
-        <div class="vis-bar"></div><div class="vis-bar"></div>
-        <div class="vis-bar"></div><div class="vis-bar"></div>
-        <div class="vis-bar"></div><div class="vis-bar"></div>
-        <div class="vis-bar"></div><div class="vis-bar"></div>
+      <canvas id="cvs"></canvas>
+      <div class="ph" id="ph"><div class="big">👤</div><span>Upload a photo to start</span></div>
+      <div class="vis" id="vis">
+        <div class="vb"></div><div class="vb"></div><div class="vb"></div>
+        <div class="vb"></div><div class="vb"></div><div class="vb"></div>
+        <div class="vb"></div><div class="vb"></div><div class="vb"></div>
+        <div class="vb"></div><div class="vb"></div><div class="vb"></div>
       </div>
     </div>
   </div>
 
-  <!-- CONTROLS -->
   <div class="controls">
-    <div class="mood-row">
-      <span class="mood-icon" id="moodIcon">😐</span>
-      <span id="moodText">Waiting for music…</span>
-    </div>
+    <div class="mood"><span class="mood-ico" id="mIco">😐</span><span id="mTxt">Waiting for music…</span></div>
     <div class="btn-row">
       <button class="btn primary" id="btnPlay" disabled>▶ Play</button>
-      <button class="btn stop" id="btnStop" disabled>■ Stop</button>
+      <button class="btn stop"    id="btnStop" disabled>■ Stop</button>
     </div>
     <div class="btn-row">
-      <button class="btn" id="btnReset">📂 New Photo</button>
+      <button class="btn" id="btnNew">📂 New Photo</button>
     </div>
   </div>
 </main>
-
-<div class="processing" id="processing">
-  <div class="spinner"></div>
-  <div class="proc-text" id="procText">Loading face detection…</div>
-</div>
-
-<footer>
-  DukesTU Talking Photo · <a href="https://timson974.netlify.app">Portfolio</a>
-</footer>
+<footer>DukesTU · <a href="https://timson974.netlify.app">Portfolio</a></footer>
 
 <script>
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 
-// ── STATE ──────────────────────────────────────────────────────────────────────
-let photoImg = null;
+// ── ELEMENTS
+const photoIn  = document.getElementById('photoIn');
+const audioIn  = document.getElementById('audioIn');
+const photoCard= document.getElementById('photoCard');
+const audioCard= document.getElementById('audioCard');
+const cvs      = document.getElementById('cvs');
+const ctx      = cvs.getContext('2d');
+const ph       = document.getElementById('ph');
+const vis      = document.getElementById('vis');
+const bars     = [...vis.querySelectorAll('.vb')];
+const btnPlay  = document.getElementById('btnPlay');
+const btnStop  = document.getElementById('btnStop');
+const btnNew   = document.getElementById('btnNew');
+const mIco     = document.getElementById('mIco');
+const mTxt     = document.getElementById('mTxt');
+
+// ── STATE
+let img = null;           // HTMLImageElement
+let audioCtx, analyser, source;
 let audioBuffer = null;
-let audioCtx = null;
-let analyser = null;
-let sourceNode = null;
-let isPlaying = false;
-let animFrame = null;
-let selectedSong = null;
-// Face position (auto-detected from pixel scan or fallback)
-let faceRegion = null; // {cx, cy, r} in image-normalized coords 0..1
+let song = null;          // preset name
+let playing = false;
+let raf = null;
 
-// head pose animation (driven by audio when no gyro)
-let headX = 0, headY = 0;
-let targetHX = 0, targetHY = 0;
-let mouthOpen = 0, targetMouth = 0;
-let time = 0;
+// drawn image bounds (cover fit)
+let iX, iY, iW, iH;
 
-// ── ELEMENTS ───────────────────────────────────────────────────────────────────
-const photoInput  = document.getElementById('photoInput');
-const audioInput  = document.getElementById('audioInput');
-const photoCard   = document.getElementById('photoCard');
-const audioCard   = document.getElementById('audioCard');
-const bgCanvas    = document.getElementById('bgCanvas');
-const faceCanvas  = document.getElementById('faceCanvas');
-const bgCtx       = bgCanvas.getContext('2d');
-const faceCtx     = faceCanvas.getContext('2d');
-const placeholder = document.getElementById('placeholder');
-const visualizer  = document.getElementById('visualizer');
-const visBars     = visualizer.querySelectorAll('.vis-bar');
-const btnPlay     = document.getElementById('btnPlay');
-const btnStop     = document.getElementById('btnStop');
-const btnReset    = document.getElementById('btnReset');
-const moodIcon    = document.getElementById('moodIcon');
-const moodText    = document.getElementById('moodText');
-const processing  = document.getElementById('processing');
-const procText    = document.getElementById('procText');
-const chips       = document.querySelectorAll('.chip');
+// animation state
+let hx = 0, hy = 0, thx = 0, thy = 0;  // head offset
+let mouth = 0, tmouth = 0;              // mouth open (px)
+let t = 0;
 
-// ── FILE INPUTS ────────────────────────────────────────────────────────────────
-photoInput.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = () => {
-    photoImg = img;
-    photoCard.classList.add('has-file');
-    placeholder.classList.add('hidden');
-    drawPhoto();
-    guessFaceRegion();
+// mouth position in CANVAS coords (set when photo loads)
+let mouthCX = 0, mouthCY = 0, mouthRX = 0;
+
+// ── PHOTO LOAD
+photoIn.addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const url = URL.createObjectURL(f);
+  const image = new Image();
+  image.onload = () => {
+    img = image;
+    photoCard.classList.add('ok');
+    ph.classList.add('gone');
+    resizeCvs();
+    drawStatic();
     checkReady();
   };
-  img.src = url;
+  image.src = url;
 });
 
-audioInput.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  loadAudioFile(file);
-  audioCard.classList.add('has-file');
-  chips.forEach(c => c.classList.remove('active'));
-  selectedSong = null;
+function resizeCvs() {
+  const stage = cvs.parentElement;
+  cvs.width  = stage.clientWidth  || 360;
+  cvs.height = stage.clientHeight || 480;
+  if (!img) return;
+  // Cover fit
+  const s = Math.max(cvs.width / img.width, cvs.height / img.height);
+  iW = img.width  * s;
+  iH = img.height * s;
+  iX = (cvs.width  - iW) / 2;
+  iY = (cvs.height - iH) / 2;
+  // Mouth heuristic: horizontal centre, 60% down the image
+  mouthCX = cvs.width  * 0.5;
+  mouthCY = cvs.height * 0.60;
+  mouthRX = cvs.width  * 0.10;  // ~10% of canvas width
+}
+
+function drawStatic() {
+  if (!img) return;
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
+  ctx.drawImage(img, iX, iY, iW, iH);
+}
+
+window.addEventListener('resize', () => { if (img) { resizeCvs(); if (!playing) drawStatic(); } });
+
+// ── AUDIO FILE
+audioIn.addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  ensureAudioCtx();
+  const buf = await f.arrayBuffer();
+  audioBuffer = await audioCtx.decodeAudioData(buf);
+  audioCard.classList.add('ok');
+  song = null;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  checkReady();
+  mIco.textContent = '🎵'; mTxt.textContent = 'Music ready!';
 });
 
-// ── SONG CHIPS ─────────────────────────────────────────────────────────────────
-// Procedurally generated rhythms (no actual audio files needed)
-chips.forEach(chip => {
+// ── SONG CHIPS
+document.querySelectorAll('.chip').forEach(chip => {
   chip.addEventListener('click', () => {
-    chips.forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    selectedSong = chip.dataset.song;
-    audioCard.classList.add('has-file');
-    audioBuffer = null; // use procedural
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+    chip.classList.add('on');
+    song = chip.dataset.s;
+    audioBuffer = null;
+    audioCard.classList.add('ok');
     checkReady();
-    updateMood(selectedSong);
+    const moods = { hiphop:['😤','Hip-hop beat'], pop:['😄','Pop vibes'], chill:['😌','Chill mode'], epic:['🔥','Epic energy'] };
+    const m = moods[song];
+    mIco.textContent = m[0]; mTxt.textContent = m[1];
   });
 });
 
-function updateMood(song) {
-  const moods = {
-    hiphop: ['😤', 'Feeling the beat'],
-    pop: ['😄', 'Pop vibes'],
-    chill: ['😌', 'Chill mode'],
-    epic: ['🔥', 'Epic energy'],
-  };
-  const m = moods[song] || ['😐', 'Ready'];
-  moodIcon.textContent = m[0];
-  moodText.textContent = m[1];
-}
-
-// ── AUDIO LOADING ─────────────────────────────────────────────────────────────
-async function loadAudioFile(file) {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const buf = await file.arrayBuffer();
-  audioBuffer = await audioCtx.decodeAudioData(buf);
-  checkReady();
-  moodIcon.textContent = '🎵';
-  moodText.textContent = 'Music ready!';
-}
-
-// ── FACE REGION GUESS ─────────────────────────────────────────────────────────
-// No ML — heuristic: scan for skin-tone pixels to find face center
-function guessFaceRegion() {
-  if (!photoImg) return;
-  const tmp = document.createElement('canvas');
-  const S = 80; // sample at low res
-  tmp.width = S; tmp.height = S;
-  const ctx = tmp.getContext('2d');
-  ctx.drawImage(photoImg, 0, 0, S, S);
-  const data = ctx.getImageData(0, 0, S, S).data;
-
-  let sumX = 0, sumY = 0, count = 0;
-  for (let y = 0; y < S; y++) {
-    for (let x = 0; x < S; x++) {
-      const i = (y * S + x) * 4;
-      const r = data[i], g = data[i+1], b = data[i+2];
-      // Skin tone: r > 60, r > g, g > b (works for most skin tones + B&W)
-      if (r > 60 && r > g && g > b * 0.85 && y < S * 0.75) {
-        sumX += x; sumY += y; count++;
-      }
-    }
-  }
-
-  if (count > 50) {
-    // Normalized face center
-    const fcx = sumX / count / S;
-    const fcy = sumY / count / S;
-    // Mouth is ~30% below face center, in lower third of face region
-    faceRegion = {
-      mouthX: fcx,
-      mouthY: fcy + 0.12,
-      faceR: 0.18
-    };
-  } else {
-    // Fallback: assume portrait — face center at top 40%, mouth at 55%
-    faceRegion = { mouthX: 0.5, mouthY: 0.55, faceR: 0.18 };
-  }
-}
-
-// ── DRAW PHOTO ────────────────────────────────────────────────────────────────
-function drawPhoto() {
-  if (!photoImg) return;
-  const stage = bgCanvas.parentElement;
-  const W = stage.clientWidth || 360;
-  const H = stage.clientHeight || 480;
-  bgCanvas.width = faceCanvas.width = W;
-  bgCanvas.height = faceCanvas.height = H;
-
-  // Fit image with cover
-  const scale = Math.max(W / photoImg.width, H / photoImg.height);
-  const sw = photoImg.width * scale;
-  const sh = photoImg.height * scale;
-  const sx = (W - sw) / 2;
-  const sy = (H - sh) / 2;
-
-  bgCtx.clearRect(0, 0, W, H);
-  bgCtx.drawImage(photoImg, sx, sy, sw, sh);
-
-  // Store for animation
-  bgCanvas._imgX = sx; bgCanvas._imgY = sy;
-  bgCanvas._imgW = sw; bgCanvas._imgH = sh;
-  bgCanvas._scale = scale;
-}
-
-// ── READY CHECK ───────────────────────────────────────────────────────────────
 function checkReady() {
-  const hasPhoto = !!photoImg;
-  const hasAudio = !!audioBuffer || !!selectedSong;
-  btnPlay.disabled = !(hasPhoto && hasAudio);
+  btnPlay.disabled = !(img && (audioBuffer || song));
 }
 
-// ── PLAY ──────────────────────────────────────────────────────────────────────
-btnPlay.addEventListener('click', startAnimation);
-btnStop.addEventListener('click', stopAnimation);
-btnReset.addEventListener('click', reset);
-
-async function startAnimation() {
+// ── AUDIO CTX
+function ensureAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+// ── PLAY
+btnPlay.addEventListener('click', async () => {
+  ensureAudioCtx();
   if (audioCtx.state === 'suspended') await audioCtx.resume();
 
   analyser = audioCtx.createAnalyser();
@@ -472,188 +261,138 @@ async function startAnimation() {
   analyser.connect(audioCtx.destination);
 
   if (audioBuffer) {
-    sourceNode = audioCtx.createBufferSource();
-    sourceNode.buffer = audioBuffer;
-    sourceNode.connect(analyser);
-    sourceNode.start(0);
-    sourceNode.onended = stopAnimation;
+    source = audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(analyser);
+    source.start(0);
+    source.onended = stopAnim;
   } else {
-    // Procedural: oscillator for rhythm
-    startProceduralAudio();
+    // Silent oscillator so analyser ticks
+    const osc = audioCtx.createOscillator();
+    const g   = audioCtx.createGain(); g.gain.value = 0;
+    osc.connect(g); g.connect(analyser); osc.start();
+    source = osc;
   }
 
-  isPlaying = true;
+  playing = true;
   btnPlay.disabled = true;
   btnStop.disabled = false;
-  time = 0;
-  animate();
-}
+  t = 0; hx = 0; hy = 0; mouth = 0;
+  loop();
+});
 
-function startProceduralAudio() {
-  // Create a silent gain node so analyser still works with procedural animation
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  gain.gain.value = 0; // silent — just drives the analyser timing
-  osc.connect(gain);
-  gain.connect(analyser);
-  osc.start();
-  sourceNode = osc;
-}
+btnStop.addEventListener('click', stopAnim);
+btnNew.addEventListener('click',  reset);
 
-function stopAnimation() {
-  isPlaying = false;
-  if (sourceNode) { try { sourceNode.stop(); } catch(e){} sourceNode = null; }
-  cancelAnimationFrame(animFrame);
+function stopAnim() {
+  playing = false;
+  cancelAnimationFrame(raf);
+  if (source) { try { source.stop(); } catch(e){} source = null; }
   btnPlay.disabled = false;
   btnStop.disabled = true;
-  // Reset face
-  faceCtx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
-  moodIcon.textContent = '😐';
-  moodText.textContent = 'Waiting for music…';
-  visBars.forEach(b => b.style.height = '4px');
+  bars.forEach(b => b.style.height = '4px');
+  mIco.textContent = '😐'; mTxt.textContent = 'Waiting for music…';
+  drawStatic();
 }
 
-// ── ANIMATION LOOP ────────────────────────────────────────────────────────────
+function reset() {
+  stopAnim();
+  img = null; audioBuffer = null; song = null;
+  photoCard.classList.remove('ok');
+  audioCard.classList.remove('ok');
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  ph.classList.remove('gone');
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
+  photoIn.value = ''; audioIn.value = '';
+  btnPlay.disabled = true;
+}
+
+// ── ANIMATION LOOP
 const freqData = new Uint8Array(128);
 
-function animate() {
-  if (!isPlaying) return;
-  animFrame = requestAnimationFrame(animate);
-  time += 0.016;
+function loop() {
+  if (!playing) return;
+  raf = requestAnimationFrame(loop);
+  t += 0.016;
 
-  // Get audio energy
+  // Audio energy
   if (analyser) analyser.getByteFrequencyData(freqData);
+  const bass = avg(0, 4);
+  const mid  = avg(4, 20);
+  let energy = audioBuffer ? (bass + mid) / 255 : proceduralE(t, song);
 
-  const bass   = avg(freqData, 0, 4);
-  const mid    = avg(freqData, 4, 20);
-  const energy = (bass + mid) / 255;
-
-  // Procedural rhythm if no real audio
-  const beat = selectedSong ? proceduralEnergy(time, selectedSong) : energy;
-  const finalEnergy = audioBuffer ? energy : beat;
-
-  // Update visualizer bars
-  visBars.forEach((bar, i) => {
-    const v = audioBuffer
-      ? freqData[i * 2] / 255
-      : Math.max(0, Math.sin(time * getTempoFor(selectedSong) + i * 0.5) * 0.5 + 0.5) * finalEnergy;
-    bar.style.height = (4 + v * 28) + 'px';
+  // Visualiser bars
+  bars.forEach((b, i) => {
+    const v = audioBuffer ? freqData[i * 2] / 255 : Math.abs(Math.sin(t * tempo(song) + i * 0.5)) * energy;
+    b.style.height = (4 + v * 26) + 'px';
   });
 
-  // Head motion — smooth sinusoidal driven by beat
-  targetHX = Math.sin(time * 0.7) * 20 * finalEnergy + Math.sin(time * 1.3) * 8;
-  targetHY = Math.sin(time * 0.5) * 12 * finalEnergy;
-  headX += (targetHX - headX) * 0.08;
-  headY += (targetHY - headY) * 0.08;
+  // Head motion — sinusoidal
+  thx = Math.sin(t * 0.9)  * 22 * energy + Math.sin(t * 1.7) * 8;
+  thy = Math.sin(t * 0.6)  * 12 * energy;
+  hx += (thx - hx) * 0.07;
+  hy += (thy - hy) * 0.07;
 
-  // Mouth open — driven by mid frequencies / beat
-  targetMouth = finalEnergy * 10;
-  mouthOpen += (targetMouth - mouthOpen) * 0.15;
+  // Mouth open
+  tmouth = energy * 14;
+  mouth += (tmouth - mouth) * 0.18;
 
-  // Blink
-  blinkT += 0.016;
-  const blink = blinkT > 3.5 && blinkT < 3.6 ? (blinkT - 3.5) / 0.05 : 0;
-  if (blinkT > 3.65) blinkT = 0;
-
-  drawAnimatedFace(headX, headY, mouthOpen, blink, finalEnergy);
-  updateMoodFromEnergy(finalEnergy);
+  // Draw
+  draw(hx, hy, mouth, energy);
+  updateMood(energy);
 }
 
-function avg(arr, s, e) {
+function avg(s, e) {
   let sum = 0;
-  for (let i = s; i < e && i < arr.length; i++) sum += arr[i];
+  for (let i = s; i < e && i < freqData.length; i++) sum += freqData[i];
   return sum / (e - s);
 }
 
-function proceduralEnergy(t, song) {
-  const tempos = { hiphop: 2.8, pop: 2.4, chill: 1.4, epic: 3.2 };
-  const bpm = tempos[song] || 2;
-  return Math.abs(Math.sin(t * bpm)) * 0.7 + Math.abs(Math.sin(t * bpm * 2)) * 0.3;
+function proceduralE(t, s) {
+  const b = { hiphop:2.8, pop:2.4, chill:1.4, epic:3.2 }[s] || 2;
+  return Math.abs(Math.sin(t * b)) * 0.7 + Math.abs(Math.sin(t * b * 2)) * 0.3;
 }
 
-function getTempoFor(song) {
-  return { hiphop: 2.8, pop: 2.4, chill: 1.4, epic: 3.2 }[song] || 2;
+function tempo(s) { return { hiphop:2.8, pop:2.4, chill:1.4, epic:3.2 }[s] || 2; }
+
+// ── DRAW FRAME
+function draw(dx, dy, mo, energy) {
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+  // 1. Draw photo shifted (head bob)
+  const scale = 1 + energy * 0.015;
+  ctx.save();
+  ctx.translate(cvs.width/2 + dx, cvs.height/2 + dy);
+  ctx.scale(scale, scale);
+  ctx.translate(-cvs.width/2, -cvs.height/2);
+  ctx.drawImage(img, iX, iY, iW, iH);
+  ctx.restore();
+
+  // 2. Mouth overlay — small dark ellipse that opens with energy
+  if (mo > 0.8) {
+    const cx = mouthCX + dx;
+    const cy = mouthCY + dy;
+    const rx = mouthRX;
+    const ry = Math.min(mo * 0.5, rx * 0.5);
+    ctx.save();
+    // Shadow / soft edge
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur  = 6;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(15,5,5,0.65)';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
 }
 
-// ── DRAW ANIMATED FACE ───────────────────────────────────────────────────────
-function drawAnimatedFace(dx, dy, mouth, blink, energy) {
-  const W = faceCanvas.width;
-  const H = faceCanvas.height;
-  faceCtx.clearRect(0, 0, W, H);
-
-  drawPhotoTransformed(dx, dy, energy);
-  drawMouthOverlay(dx, dy, mouth, W, H);
+function updateMood(e) {
+  if (e > 0.65) { mIco.textContent='🔥'; mTxt.textContent='High energy!'; }
+  else if (e > 0.35) { mIco.textContent='😄'; mTxt.textContent='Feeling it!'; }
+  else if (e > 0.1)  { mIco.textContent='😊'; mTxt.textContent='Vibing…'; }
+  else               { mIco.textContent='😌'; mTxt.textContent='Chilling…'; }
 }
-
-function drawPhotoTransformed(dx, dy, energy) {
-  const W = faceCanvas.width;
-  const H = faceCanvas.height;
-  const scale = 1 + energy * 0.02; // subtle breathing scale
-
-  faceCtx.save();
-  faceCtx.translate(W/2 + dx, H/2 + dy);
-  faceCtx.scale(scale, scale);
-  faceCtx.translate(-W/2, -H/2);
-
-  // Draw photo
-  faceCtx.drawImage(photoImg,
-    bgCanvas._imgX, bgCanvas._imgY,
-    bgCanvas._imgW, bgCanvas._imgH
-  );
-
-  faceCtx.restore();
-}
-
-function drawMouthOverlay(dx, dy, mouth, W, H) {
-  if (!faceRegion || mouth < 0.5) return;
-
-  // Map normalized face coords to canvas, offset by head movement
-  const cx = faceRegion.mouthX * W + dx;
-  const cy = faceRegion.mouthY * H + dy;
-  const rx = faceRegion.faceR * W * 0.55; // mouth width ~55% of face radius
-  const ry = Math.min(mouth * 0.4, rx * 0.35); // height from energy
-
-  if (ry < 1) return;
-
-  faceCtx.save();
-  // Dark inner mouth
-  faceCtx.beginPath();
-  faceCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-  faceCtx.fillStyle = 'rgba(20,8,8,0.6)';
-  faceCtx.fill();
-  // Soft edge
-  faceCtx.strokeStyle = 'rgba(0,0,0,0.25)';
-  faceCtx.lineWidth = 2;
-  faceCtx.stroke();
-  faceCtx.restore();
-}
-
-function updateMoodFromEnergy(e) {
-  if (e > 0.7) { moodIcon.textContent = '🔥'; moodText.textContent = 'High energy!'; }
-  else if (e > 0.4) { moodIcon.textContent = '😄'; moodText.textContent = 'Feeling it!'; }
-  else if (e > 0.1) { moodIcon.textContent = '😊'; moodText.textContent = 'Vibing…'; }
-  else { moodIcon.textContent = '😌'; moodText.textContent = 'Chilling…'; }
-}
-
-// ── RESET ─────────────────────────────────────────────────────────────────────
-function reset() {
-  stopAnimation();
-  photoImg = null; audioBuffer = null; selectedSong = null;
-  faceRegion = null;
-  photoCard.classList.remove('has-file');
-  audioCard.classList.remove('has-file');
-  chips.forEach(c => c.classList.remove('active'));
-  placeholder.classList.remove('hidden');
-  bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
-  faceCtx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
-  photoInput.value = ''; audioInput.value = '';
-  btnPlay.disabled = true;
-  moodIcon.textContent = '😐';
-  moodText.textContent = 'Waiting for music…';
-}
-
-// ── RESIZE ───────────────────────────────────────────────────────────────────
-window.addEventListener('resize', () => { if (photoImg) drawPhoto(); });
 </script>
 </body>
 </html>
