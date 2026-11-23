@@ -150,6 +150,8 @@ footer a { color: var(--accent2); text-decoration: none; }
       <input type="range" id="mouthXSlider" min="20" max="80" value="50" style="width:100%;accent-color:var(--accent2)">
       <label style="font-size:12px;color:var(--text3)">🔵 Size <span id="mouthSizeVal">5</span></label>
       <input type="range" id="mouthSizeSlider" min="1" max="10" value="5" style="width:100%;accent-color:var(--green)">
+      <label style="font-size:12px;color:var(--text3)">👁 Eyes offset <span id="eyeOffsetVal">12</span>%</label>
+      <input type="range" id="eyeOffsetSlider" min="2" max="35" value="12" style="width:100%;accent-color:#a78bfa">
     </div>
   </div>
 </main>
@@ -504,81 +506,105 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
   ctx.fillStyle = gR; ctx.fillRect(W-fade,0,fade,H);
 
   // Read sliders every frame
-  const pctY = parseFloat(document.getElementById('mouthSlider').value)     / 100;
-  const pctX = parseFloat(document.getElementById('mouthXSlider').value)    / 100;
-  const size = parseFloat(document.getElementById('mouthSizeSlider').value) / 5; // 0.2–2
+  const pctY      = parseFloat(document.getElementById('mouthSlider').value)     / 100;
+  const pctX      = parseFloat(document.getElementById('mouthXSlider').value)    / 100;
+  const sizeVal   = parseFloat(document.getElementById('mouthSizeSlider').value);
+  const eyeOffPct = parseFloat(document.getElementById('eyeOffsetSlider').value) / 100;
 
-  // Mouth centre in canvas coords → transformed
+  // size: slider 1–10, map to 0.5–2.0 so minimum is already decent
+  const size = 0.5 + (sizeVal - 1) / 9 * 1.5;
+
+  // Mouth centre → transformed
   const mBase = xform(W * pctX, H * pctY);
   const mCx = mBase.x, mCy = mBase.y;
-  const mRx = W * 0.042 * size;          // size slider directly controls radius
-  const mRy = Math.min(mo * 0.7, mRx * 0.7);
+  const mRx = W * 0.052 * size;    // horizontal half-width of mouth
+  const openH = mo * mRx * 0.9;    // how wide open vertically (driven by music)
 
-  // 3. MOUTH
-  if (mo > 0.2 && mRx > 1 && mRy > 0.5) {
+  // 3. MOUTH — realistic lips shape
+  if (mRx > 2) {
     ctx.save();
     ctx.translate(mCx, mCy);
     ctx.rotate(tilt);
 
-    // Cavity
-    ctx.beginPath();
-    ctx.ellipse(0, 0, mRx, mRy, 0, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(10,2,2,0.92)';
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-    ctx.shadowBlur = 8;
-    ctx.fill();
-    ctx.shadowBlur = 0;
+    // --- Draw lips as two bezier arcs (upper + lower lip) ---
+    const lipThick = mRx * 0.22;   // lip thickness at rest
+    const openY    = Math.max(openH, 0);
 
-    // Teeth (clipped inside ellipse)
-    if (mRy > 4) {
+    // Upper lip arc (Cupid's bow shape)
+    ctx.beginPath();
+    ctx.moveTo(-mRx, 0);
+    // left of bow
+    ctx.bezierCurveTo(-mRx * 0.6, -lipThick * 1.4,  -mRx * 0.2, -lipThick * 1.8,  0, -lipThick * 0.9);
+    // right of bow (mirror)
+    ctx.bezierCurveTo( mRx * 0.2, -lipThick * 1.8,   mRx * 0.6, -lipThick * 1.4,  mRx, 0);
+    // bottom of upper lip (closes around opening)
+    ctx.bezierCurveTo( mRx * 0.5,  lipThick * 0.5,  -mRx * 0.5,  lipThick * 0.5,  -mRx, 0);
+    ctx.fillStyle = 'rgba(195,110,110,0.92)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(150,70,70,0.6)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Lower lip arc
+    ctx.beginPath();
+    ctx.moveTo(-mRx, 0);
+    ctx.bezierCurveTo(-mRx * 0.5, openY + lipThick * 1.6,   mRx * 0.5, openY + lipThick * 1.6,   mRx, 0);
+    ctx.bezierCurveTo( mRx * 0.5,  lipThick * 0.5,          -mRx * 0.5,  lipThick * 0.5,          -mRx, 0);
+    ctx.fillStyle = 'rgba(185,100,100,0.88)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(150,70,70,0.6)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Mouth cavity when open
+    if (openY > lipThick * 0.5) {
       ctx.save();
+      // clip to the gap between lips
       ctx.beginPath();
-      ctx.ellipse(0, 0, mRx, mRy, 0, 0, Math.PI*2);
+      ctx.moveTo(-mRx * 0.85, 0);
+      ctx.bezierCurveTo(-mRx*0.4, -lipThick*0.3,  mRx*0.4, -lipThick*0.3,  mRx*0.85, 0);
+      ctx.bezierCurveTo( mRx*0.4,  openY + lipThick*0.5, -mRx*0.4, openY + lipThick*0.5, -mRx*0.85, 0);
       ctx.clip();
-      // upper teeth strip
-      ctx.fillStyle = 'rgba(245,240,230,0.95)';
-      ctx.fillRect(-mRx, -mRy, mRx*2, mRy*0.6);
-      // dividers
-      ctx.strokeStyle = 'rgba(190,180,165,0.5)';
-      ctx.lineWidth = 1;
-      [-0.34, 0, 0.34].forEach(f => {
-        ctx.beginPath();
-        ctx.moveTo(f*mRx, -mRy);
-        ctx.lineTo(f*mRx, 0);
-        ctx.stroke();
-      });
+
+      // dark cavity
+      ctx.fillStyle = 'rgba(8,0,0,0.9)';
+      ctx.fillRect(-mRx, -lipThick, mRx*2, openY + lipThick*2);
+
+      // teeth (white strip top)
+      if (openY > lipThick) {
+        ctx.fillStyle = 'rgba(245,240,228,0.95)';
+        ctx.fillRect(-mRx*0.75, -lipThick*0.2, mRx*1.5, openY * 0.42);
+        // tooth dividers
+        ctx.strokeStyle = 'rgba(200,185,165,0.45)';
+        ctx.lineWidth = 1;
+        [-0.38, 0, 0.38].forEach(f => {
+          ctx.beginPath();
+          ctx.moveTo(f * mRx * 0.75, -lipThick*0.2);
+          ctx.lineTo(f * mRx * 0.75, openY * 0.38);
+          ctx.stroke();
+        });
+      }
       ctx.restore();
     }
-
-    // Lip edge
-    ctx.beginPath();
-    ctx.ellipse(0, 0, mRx, mRy, 0, 0, Math.PI*2);
-    ctx.strokeStyle = 'rgba(140,70,70,0.55)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
 
     ctx.restore();
   }
 
-  // 4. BLINK — eyes sit ~55% of mouth-to-top distance above mouth
+  // 4. BLINK — user controls eye offset above mouth
   if (blinkClose > 0) {
-    // Eye row Y: pctY minus ~15% of canvas height above mouth
-    const eyePctY = pctY - 0.14;
+    const eyePctY = pctY - eyeOffPct;
     const eyeBase = xform(W * pctX, H * eyePctY);
-    const eCy  = eyeBase.y;
-    const eGap = mRx * 1.0;   // half distance between eye centres
-    const eRx  = mRx * 0.52;
-    const eRy  = mRx * 0.28 * blinkClose;
+    const eGap = mRx * 0.95;
+    const eRx  = mRx * 0.5;
+    const eRy  = mRx * 0.3 * blinkClose;
 
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.88)';
-    // left eye
+    ctx.fillStyle = 'rgba(0,0,0,0.9)';
     ctx.beginPath();
-    ctx.ellipse(eyeBase.x - eGap, eCy, eRx, eRy, tilt, 0, Math.PI*2);
+    ctx.ellipse(eyeBase.x - eGap, eyeBase.y, eRx, eRy, tilt, 0, Math.PI*2);
     ctx.fill();
-    // right eye
     ctx.beginPath();
-    ctx.ellipse(eyeBase.x + eGap, eCy, eRx, eRy, tilt, 0, Math.PI*2);
+    ctx.ellipse(eyeBase.x + eGap, eyeBase.y, eRx, eRy, tilt, 0, Math.PI*2);
     ctx.fill();
     ctx.restore();
   }
@@ -594,6 +620,9 @@ const mouthSizeValEl  = document.getElementById('mouthSizeVal');
 mouthSlider.addEventListener('input', () => { mouthValEl.textContent = mouthSlider.value; });
 mouthXSlider.addEventListener('input', () => { mouthXValEl.textContent = mouthXSlider.value; });
 mouthSizeSlider.addEventListener('input', () => { mouthSizeValEl.textContent = mouthSizeSlider.value; });
+const eyeOffsetSlider = document.getElementById('eyeOffsetSlider');
+const eyeOffsetValEl  = document.getElementById('eyeOffsetVal');
+eyeOffsetSlider.addEventListener('input', () => { eyeOffsetValEl.textContent = eyeOffsetSlider.value; });
 
 // Presets
 function applyPreset(v, x, s) {
