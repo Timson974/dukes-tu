@@ -521,17 +521,19 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
   const mBase = xform(W * pctX, H * pctY);
   const mCx = mBase.x, mCy = mBase.y;
   const mRx = W * 0.052 * size;    // horizontal half-width of mouth
-  const openH = mo * mRx * 0.9;    // how wide open vertically (driven by music)
+  // openH unused — opening computed inside mouth block from moN
 
-  // 3. MOUTH — lips shape, all contained within mRx × (mRx*0.6) box
+  // 3. MOUTH — lips always drawn (closed line when mo=0, open when mo>0)
   if (mRx > 2) {
     ctx.save();
     ctx.translate(mCx, mCy);
     ctx.rotate(tilt);
 
-    const L  = mRx * 0.24;             // lip thickness
-    // opening: 0 = closed, max = L*2 (capped hard so it never grows huge)
-    const op = Math.min(mo * L * 2.5, L * 2.2);
+    const L  = mRx * 0.28;             // lip thickness
+    // mo arrives as pixels (0..~20). Normalise to 0..1 relative to mRx
+    const moN = Math.min(mo / Math.max(mRx, 1), 1.0);
+    // opening height, capped to L*2 so it never grows huge
+    const op = moN * L * 2.5;
 
     // Clip everything to a safe bounding ellipse so nothing escapes
     ctx.beginPath();
