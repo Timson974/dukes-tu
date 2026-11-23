@@ -218,11 +218,12 @@ function resizeCvs() {
   iH = img.height * s;
   iX = (cvs.width  - iW) / 2;
   iY = (cvs.height - iH) / 2;
-  // Mouth heuristic: horizontal centre, 60% down the image
+  // Mouth: horizontal centre, slider % down canvas
   const pct = (document.getElementById('mouthSlider')?.value || 72) / 100;
   mouthCX = cvs.width  * 0.5;
   mouthCY = cvs.height * pct;
-  mouthRX = cvs.width  * 0.09;
+  // Mouth radius scales with how far from top — small for full-body shots
+  mouthRX = cvs.width * 0.045 * (0.5 + pct * 0.5);
 }
 
 function drawStatic() {
@@ -407,15 +408,15 @@ function loop() {
     b.style.height = (4 + v * 26) + 'px';
   });
 
-  // Head motion — sinusoidal
-  thx = Math.sin(t * 0.9)  * 22 * energy + Math.sin(t * 1.7) * 8;
-  thy = Math.sin(t * 0.6)  * 12 * energy;
-  hx += (thx - hx) * 0.07;
-  hy += (thy - hy) * 0.07;
+  // Head motion — stronger amplitude so it's visible
+  thx = Math.sin(t * 0.9)  * 36 * energy + Math.sin(t * 1.7) * 14;
+  thy = Math.sin(t * 0.6)  * 20 * energy + Math.sin(t * 1.1) * 8;
+  hx += (thx - hx) * 0.09;
+  hy += (thy - hy) * 0.09;
 
-  // Mouth open
-  tmouth = energy * 14;
-  mouth += (tmouth - mouth) * 0.18;
+  // Mouth open — stronger
+  tmouth = energy * 20;
+  mouth += (tmouth - mouth) * 0.22;
 
   // Draw
   draw(hx, hy, mouth, energy);
@@ -448,19 +449,18 @@ function draw(dx, dy, mo, energy) {
   ctx.drawImage(img, iX, iY, iW, iH);
   ctx.restore();
 
-  // 2. Mouth overlay — small dark ellipse that opens with energy
-  if (mo > 0.8) {
+  // 2. Mouth overlay — dark ellipse, threshold lowered so it shows earlier
+  if (mo > 0.3) {
     const cx = mouthCX + dx;
     const cy = mouthCY + dy;
     const rx = mouthRX;
-    const ry = Math.min(mo * 0.5, rx * 0.5);
+    const ry = Math.min(mo * 0.6, rx * 0.6);
     ctx.save();
-    // Shadow / soft edge
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur  = 6;
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur  = 8;
     ctx.beginPath();
     ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(15,5,5,0.65)';
+    ctx.fillStyle = 'rgba(10,2,2,0.75)';
     ctx.fill();
     ctx.shadowBlur = 0;
     ctx.restore();
