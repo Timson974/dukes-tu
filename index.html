@@ -424,9 +424,9 @@ function loop() {
     b.style.height = (4 + v * 26) + 'px';
   });
 
-  // Head motion — natural sway
-  thx = Math.sin(t * 0.9)  * 14 * energy + Math.sin(t * 1.7) * 5;
-  thy = Math.sin(t * 0.6)  * 8  * energy;
+  // Head motion — natural sway (wider arc for realistic head turn)
+  thx = Math.sin(t * 0.9)  * W * 0.045 * energy + Math.sin(t * 1.7) * W * 0.012;
+  thy = Math.sin(t * 0.6)  * H * 0.018 * energy;
   hx += (thx - hx) * 0.07;
   hy += (thy - hy) * 0.07;
 
@@ -470,8 +470,8 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
 
   // Shared sway transform
   const pivX  = W * 0.5;
-  const pivY  = H * 1.4;
-  const tilt  = dx * 0.0012;
+  const pivY  = H * 2.2;          // pivot below frame → upper-body sway
+  const tilt  = dx / W * 3.5;    // ±~9° at full sway — realistic head turn
   const pScl  = 1 + energy * 0.012;
   const cosT  = Math.cos(tilt);
   const sinT  = Math.sin(tilt);
