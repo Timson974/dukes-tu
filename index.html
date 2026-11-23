@@ -617,17 +617,16 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
   // size: slider 1–10, map to 0.5–2.0 so minimum is already decent
   const size = 0.5 + (sizeVal - 1) / 9 * 1.5;
 
-  // Mouth centre → transformed
-  const mBase = xform(W * pctX, H * pctY);
-  const mCx = mBase.x, mCy = mBase.y;
-  const mRx = W * 0.052 * size;    // horizontal half-width of mouth
+  // Mouth centre — fixed to canvas coords (no xform: position is always predictable)
+  const mCx = W * pctX;
+  const mCy = H * pctY;
+  const mRx = W * 0.052 * size;
   // openH unused — opening computed inside mouth block from moN
 
   // 3. MOUTH — lips always drawn (closed line when mo=0, open when mo>0)
   if (mRx > 2) {
     ctx.save();
     ctx.translate(mCx, mCy);
-    ctx.rotate(tilt);
 
     const L  = mRx * 0.3;              // lip thickness
     // mo arrives as pixels (0..~20). Normalise to 0..1 relative to mRx
@@ -696,22 +695,22 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
   // 4. BLINK — always draw eye markers (dim when open, dark when blinking)
   {
     const eyeSpread = parseFloat(document.getElementById('eyeSpreadSlider').value) / 100;
-    const eyePctY   = pctY - eyeOffPct;
-    const eyeBase   = xform(W * pctX, H * eyePctY);
+    // Eyes fixed to canvas coords — always predictable
+    const eCx  = W * pctX;
+    const eCy  = H * (pctY - eyeOffPct);
     const eGap = mRx * eyeSpread;
     const eRx  = mRx * 0.52;
-    // Always show faint eye marker so user can position them; full close on blink
     const eRy  = blinkClose > 0
-      ? mRx * 0.32 * blinkClose   // closing
-      : mRx * 0.04;               // resting — tiny line so user sees where eyes are
+      ? mRx * 0.32 * blinkClose
+      : mRx * 0.04;
 
     ctx.save();
     ctx.fillStyle = blinkClose > 0 ? 'rgba(0,0,0,0.9)' : 'rgba(0,0,0,0.25)';
     ctx.beginPath();
-    ctx.ellipse(eyeBase.x - eGap, eyeBase.y, eRx, Math.max(eRy, 1), tilt, 0, Math.PI*2);
+    ctx.ellipse(eCx - eGap, eCy, eRx, Math.max(eRy, 1), 0, 0, Math.PI*2);
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(eyeBase.x + eGap, eyeBase.y, eRx, Math.max(eRy, 1), tilt, 0, Math.PI*2);
+    ctx.ellipse(eCx + eGap, eCy, eRx, Math.max(eRy, 1), 0, 0, Math.PI*2);
     ctx.fill();
     ctx.restore();
   }
