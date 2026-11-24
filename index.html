@@ -703,9 +703,9 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
   // 4. BLINK — always draw eye markers (dim when open, dark when blinking)
   {
     const eyeSpread = parseFloat(document.getElementById('eyeSpreadSlider').value) / 100;
-    // Eyes follow same subtle bounce as mouth
+    // Eyes: fixed offset above mouth in pixels (mRx * eyeOffPct * 8)
     const eCx  = W * pctX + dx * 0.3;
-    const eCy  = H * (pctY - eyeOffPct) + dy * 0.4;
+    const eCy  = mCy - mRx * eyeOffPct * 8 + dy * 0.4;
     const eGap = mRx * eyeSpread;
     const eRx  = mRx * 0.52;
     const eRy  = blinkClose > 0
