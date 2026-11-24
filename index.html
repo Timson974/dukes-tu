@@ -300,23 +300,32 @@ photoIn.addEventListener('change', e => {
 
 function resizeCvs() {
   const stage = cvs.parentElement;
-  cvs.width  = stage.clientWidth  || 360;
-  cvs.height = stage.clientHeight || 480;
+  // Use getBoundingClientRect for accurate size after CSS layout
+  const rect = stage.getBoundingClientRect();
+  const w = Math.round(rect.width)  || 360;
+  const h = Math.round(rect.height) || 480;
+  cvs.width  = w;
+  cvs.height = h;
   if (!img) return;
   // Cover fit
-  const s = Math.max(cvs.width / img.width, cvs.height / img.height);
+  const s = Math.max(w / img.width, h / img.height);
   iW = img.width  * s;
   iH = img.height * s;
-  iX = (cvs.width  - iW) / 2;
-  iY = (cvs.height - iH) / 2;
+  iX = (w - iW) / 2;
+  iY = (h - iH) / 2;
   // Mouth: position from sliders
-  const pctY = (document.getElementById('mouthSlider')?.value    || 72) / 100;
+  const pctY = (document.getElementById('mouthSlider')?.value    || 55) / 100;
   const pctX = (document.getElementById('mouthXSlider')?.value   || 50) / 100;
-  const size = (document.getElementById('mouthSizeSlider')?.value || 5)  / 5; // 0.2–2.0
-  mouthCX = cvs.width  * pctX;
-  mouthCY = cvs.height * pctY;
-  // Radius: base scales with vertical position (smaller for full body), then user size
-  mouthRX = cvs.width * 0.038 * (0.4 + pctY * 0.6) * size;
+  const size = (document.getElementById('mouthSizeSlider')?.value || 5)  / 5;
+  mouthCX = w * pctX;
+  mouthCY = h * pctY;
+  mouthRX = w * 0.022 * size;  // small base radius
+}
+
+// Use ResizeObserver so canvas reacts to sidebar layout changes
+if (window.ResizeObserver) {
+  new ResizeObserver(() => { if (img) { resizeCvs(); if (!playing) drawStatic(); } })
+    .observe(cvs.parentElement);
 }
 
 function drawStatic() {
@@ -337,7 +346,7 @@ function drawStatic() {
   ctx.restore();
 }
 
-window.addEventListener('resize', () => { if (img) { resizeCvs(); if (!playing) drawStatic(); } });
+window.addEventListener('resize', () => { if (img) { resizeCvs(); if (!playing) drawStatic(); } }); // fallback
 
 // ── AUDIO FILE
 audioIn.addEventListener('change', async e => {
@@ -705,7 +714,7 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
   // Mouth centre — no horizontal sway, only slight vertical bounce
   const mCx = W * pctX;
   const mCy = H * pctY + dy * 0.3;
-  const mRx = W * 0.022 * size;  // smaller mouth
+  const mRx = W * 0.015 * size;  // mouth size
   // openH unused — opening computed inside mouth block from moN
 
   // 3. MOUTH — Cupid's bow lips, opens with beat
