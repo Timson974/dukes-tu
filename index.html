@@ -214,8 +214,6 @@ photoIn.addEventListener('change', e => {
     photoCard.classList.add('ok');
     ph.classList.add('gone');
     resizeCvs();
-    // Auto-apply Portrait preset on load
-    applyPreset(55, 50, 5, 10, 85);
     drawStatic();
     checkReady();
     document.getElementById('mouthRow').style.display = 'flex';
