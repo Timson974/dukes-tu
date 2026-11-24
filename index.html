@@ -155,11 +155,12 @@ footer a { color: var(--accent2); text-decoration: none; }
         <!-- Mouth: Vertical -->
         <div>
           <div style="font-size:11px;color:var(--text3)">↕ Y <span id="mouthVal">55</span>%</div>
+
           <input type="range" id="mouthSlider" min="10" max="95" value="55" style="width:100%;accent-color:var(--accent)">
         </div>
         <!-- Eye: Vertical -->
         <div>
-          <div style="font-size:11px;color:var(--text3)">↕ Y <span id="eyeYVal">55</span></div>
+          <div style="font-size:11px;color:var(--text3)">↑ Above mouth <span id="eyeYVal">6</span></div>
           <input type="range" id="eyeYSlider" min="1" max="20" value="6" style="width:100%;accent-color:var(--accent)">
         </div>
 
@@ -170,7 +171,7 @@ footer a { color: var(--accent2); text-decoration: none; }
         </div>
         <!-- Eye: Horizontal -->
         <div>
-          <div style="font-size:11px;color:var(--text3)">↔ X <span id="eyeXVal">50</span>%</div>
+          <div style="font-size:11px;color:var(--text3)">↔ X <span id="eyeXVal">50%</span></div>
           <input type="range" id="eyeXSlider" min="20" max="80" value="50" style="width:100%;accent-color:var(--accent2)">
         </div>
 
@@ -725,11 +726,11 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
     const eyeSpreadSliderVal = parseFloat(document.getElementById('eyeSpreadSlider2')?.value  || 5);
     const eyeXPct  = parseFloat(document.getElementById('eyeXSlider')?.value  || pctX * 100) / 100;
     const eyeYOff  = parseFloat(document.getElementById('eyeYSlider')?.value  || 6);
-    // Eye center: independent X, sits above mouth by eyeYOff% of canvas
+    // Eye center: eyeYOff = slider 1–20, mapped to 3%–25% above mouth
     const eCx  = W * eyeXPct;
-    const eCy  = H * pctY - H * (eyeYOff * 0.01) + dy * 0.3;
-    const eGap = W * (0.012 + eyeSpreadSliderVal * 0.004);  // 1→0.016, 5→0.032, 12→0.060
-    const eRx  = W * (0.006 + eyeSizeSliderVal   * 0.0025); // 1→0.009, 3→0.014, 12→0.036
+    const eCy  = H * pctY - H * (0.03 + eyeYOff * 0.011) + dy * 0.3;
+    const eGap = W * (0.015 + eyeSpreadSliderVal * 0.005);  // 1→0.020, 5→0.040, 12→0.075
+    const eRx  = W * (0.010 + eyeSizeSliderVal   * 0.004);  // 1→0.014, 3→0.022, 12→0.058
     const eRy  = blinkClose > 0
       ? eRx * 0.9 * blinkClose
       : eRx * 0.55;
