@@ -138,23 +138,62 @@ footer a { color: var(--accent2); text-decoration: none; }
       <button class="btn" id="btnNew">📂 New Photo</button>
       <button class="btn save" id="btnSave" disabled>💾 Save Video</button>
     </div>
-    <div id="mouthRow" style="display:none; flex-direction:column; gap:8px;">
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button class="btn" id="presetSelfie"   style="flex:1;padding:8px;font-size:12px;">🤳 Selfie</button>
-        <button class="btn" id="presetPortrait" style="flex:1;padding:8px;font-size:12px;">🖼 Portrait</button>
-        <button class="btn" id="presetFull"     style="flex:1;padding:8px;font-size:12px;">🧍 Full body</button>
+    <div id="mouthRow" style="display:none; flex-direction:column; gap:6px;">
+      <!-- Preset buttons -->
+      <div style="display:flex;gap:6px;">
+        <button class="btn" id="presetSelfie"   style="flex:1;padding:7px;font-size:11px;">🤳 Selfie</button>
+        <button class="btn" id="presetPortrait" style="flex:1;padding:7px;font-size:11px;">🖼 Portrait</button>
+        <button class="btn" id="presetFull"     style="flex:1;padding:7px;font-size:11px;">🧍 Full</button>
       </div>
-      <label style="font-size:12px;color:var(--text3)">↕️ Vertical <span id="mouthVal">72</span>%</label>
-      <input type="range" id="mouthSlider" min="10" max="95" value="55" style="width:100%;accent-color:var(--accent)">
-      <label style="font-size:12px;color:var(--text3)">↔️ Horizontal <span id="mouthXVal">50</span>%</label>
-      <input type="range" id="mouthXSlider" min="20" max="80" value="50" style="width:100%;accent-color:var(--accent2)">
-      <label style="font-size:12px;color:var(--text3)">🔵 Size <span id="mouthSizeVal">5</span></label>
-      <input type="range" id="mouthSizeSlider" min="1" max="10" value="5" style="width:100%;accent-color:var(--green)">
-      <label style="font-size:12px;color:var(--text3)">👁️ Eye size <span id="eyeSizeVal">5</span></label>
-      <input type="range" id="eyeSizeSlider" min="1" max="12" value="5" style="width:100%;accent-color:var(--accent)">
-      <label style="font-size:12px;color:var(--text3)">↔️ Eye spread <span id="eyeSpreadVal2">5</span></label>
-      <input type="range" id="eyeSpreadSlider2" min="1" max="12" value="5" style="width:100%;accent-color:var(--accent2)">
-      <!-- hidden sliders (legacy) -->
+      <!-- Two-column grid: left=mouth, right=eyes -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;align-items:center;">
+        <!-- MOUTH column header -->
+        <div style="font-size:11px;font-weight:600;color:var(--accent2);text-transform:uppercase;letter-spacing:.05em;">👄 Mouth</div>
+        <!-- EYE column header -->
+        <div style="font-size:11px;font-weight:600;color:var(--accent2);text-transform:uppercase;letter-spacing:.05em;">👁 Eyes</div>
+
+        <!-- Mouth: Vertical -->
+        <div>
+          <div style="font-size:11px;color:var(--text3)">↕ Y <span id="mouthVal">55</span>%</div>
+          <input type="range" id="mouthSlider" min="10" max="95" value="55" style="width:100%;accent-color:var(--accent)">
+        </div>
+        <!-- Eye: Vertical -->
+        <div>
+          <div style="font-size:11px;color:var(--text3)">↕ Y <span id="eyeYVal">55</span></div>
+          <input type="range" id="eyeYSlider" min="1" max="20" value="6" style="width:100%;accent-color:var(--accent)">
+        </div>
+
+        <!-- Mouth: Horizontal -->
+        <div>
+          <div style="font-size:11px;color:var(--text3)">↔ X <span id="mouthXVal">50</span>%</div>
+          <input type="range" id="mouthXSlider" min="20" max="80" value="50" style="width:100%;accent-color:var(--accent2)">
+        </div>
+        <!-- Eye: Horizontal -->
+        <div>
+          <div style="font-size:11px;color:var(--text3)">↔ X <span id="eyeXVal">50</span>%</div>
+          <input type="range" id="eyeXSlider" min="20" max="80" value="50" style="width:100%;accent-color:var(--accent2)">
+        </div>
+
+        <!-- Mouth: Size -->
+        <div>
+          <div style="font-size:11px;color:var(--text3)">⊙ Size <span id="mouthSizeVal">5</span></div>
+          <input type="range" id="mouthSizeSlider" min="1" max="10" value="5" style="width:100%;accent-color:var(--green)">
+        </div>
+        <!-- Eye: Size -->
+        <div>
+          <div style="font-size:11px;color:var(--text3)">⊙ Size <span id="eyeSizeVal">3</span></div>
+          <input type="range" id="eyeSizeSlider" min="1" max="12" value="3" style="width:100%;accent-color:var(--green)">
+        </div>
+
+        <!-- (empty mouth slot) -->
+        <div></div>
+        <!-- Eye: Spread -->
+        <div>
+          <div style="font-size:11px;color:var(--text3)">↔↔ Gap <span id="eyeSpreadVal2">5</span></div>
+          <input type="range" id="eyeSpreadSlider2" min="1" max="12" value="5" style="width:100%;accent-color:var(--accent2)">
+        </div>
+      </div>
+      <!-- hidden legacy sliders -->
       <input type="range" id="eyeOffsetSlider" min="1" max="40" value="8" step="1" style="display:none">
       <input type="range" id="eyeSpreadSlider" min="40" max="200" value="75" step="5" style="display:none">
       <span id="eyeOffsetVal" style="display:none">8</span>
@@ -681,14 +720,16 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
 
   // 4. BLINK — always draw eye markers (dim when open, dark when blinking)
   {
-    // Eye size and spread from new sliders (1–12 → scale factor)
-    const eyeSizeSliderVal   = parseFloat(document.getElementById('eyeSizeSlider')?.value   || 5);
-    const eyeSpreadSliderVal = parseFloat(document.getElementById('eyeSpreadSlider2')?.value || 5);
-    const eCx  = W * pctX;
-    // Eyes sit above mouth by a fixed % of canvas height
-    const eCy  = mCy - H * 0.055 + dy * 0.3;
-    const eGap = W * (0.015 + eyeSpreadSliderVal * 0.004);  // 1→0.019, 5→0.035, 12→0.063
-    const eRx  = W * (0.008 + eyeSizeSliderVal   * 0.003);  // 1→0.011, 5→0.023, 12→0.044
+    // Eye sliders
+    const eyeSizeSliderVal   = parseFloat(document.getElementById('eyeSizeSlider')?.value    || 3);
+    const eyeSpreadSliderVal = parseFloat(document.getElementById('eyeSpreadSlider2')?.value  || 5);
+    const eyeXPct  = parseFloat(document.getElementById('eyeXSlider')?.value  || pctX * 100) / 100;
+    const eyeYOff  = parseFloat(document.getElementById('eyeYSlider')?.value  || 6);
+    // Eye center: independent X, sits above mouth by eyeYOff% of canvas
+    const eCx  = W * eyeXPct;
+    const eCy  = H * pctY - H * (eyeYOff * 0.01) + dy * 0.3;
+    const eGap = W * (0.012 + eyeSpreadSliderVal * 0.004);  // 1→0.016, 5→0.032, 12→0.060
+    const eRx  = W * (0.006 + eyeSizeSliderVal   * 0.0025); // 1→0.009, 3→0.014, 12→0.036
     const eRy  = blinkClose > 0
       ? eRx * 0.9 * blinkClose
       : eRx * 0.55;
@@ -770,12 +811,18 @@ mouthSlider.addEventListener('input', () => { mouthValEl.textContent = mouthSlid
 mouthXSlider.addEventListener('input', () => { mouthXValEl.textContent = mouthXSlider.value; });
 mouthSizeSlider.addEventListener('input', () => { mouthSizeValEl.textContent = mouthSizeSlider.value; });
 // Eye sliders
-const eyeSizeSliderEl   = document.getElementById('eyeSizeSlider');
+const eyeSizeSliderEl    = document.getElementById('eyeSizeSlider');
 const eyeSpreadSlider2El = document.getElementById('eyeSpreadSlider2');
-const eyeSizeValEl      = document.getElementById('eyeSizeVal');
-const eyeSpreadVal2El   = document.getElementById('eyeSpreadVal2');
-eyeSizeSliderEl.addEventListener('input',    () => { eyeSizeValEl.textContent   = eyeSizeSliderEl.value; });
+const eyeXSliderEl       = document.getElementById('eyeXSlider');
+const eyeYSliderEl       = document.getElementById('eyeYSlider');
+const eyeSizeValEl       = document.getElementById('eyeSizeVal');
+const eyeSpreadVal2El    = document.getElementById('eyeSpreadVal2');
+const eyeXValEl          = document.getElementById('eyeXVal');
+const eyeYValEl          = document.getElementById('eyeYVal');
+eyeSizeSliderEl.addEventListener('input',    () => { eyeSizeValEl.textContent    = eyeSizeSliderEl.value; });
 eyeSpreadSlider2El.addEventListener('input', () => { eyeSpreadVal2El.textContent = eyeSpreadSlider2El.value; });
+eyeXSliderEl.addEventListener('input',       () => { eyeXValEl.textContent       = eyeXSliderEl.value + '%'; });
+eyeYSliderEl.addEventListener('input',       () => { eyeYValEl.textContent       = eyeYSliderEl.value; });
 // Tap/click on canvas → set mouth position from photo coordinates
 function placeFromCanvas(clientX, clientY) {
   if (!img.complete || !img.naturalWidth) return;
@@ -798,20 +845,22 @@ cvs.addEventListener('touchend', e => {
   placeFromCanvas(t.clientX, t.clientY);
 }, { passive: false });
 
-// Presets  — args: mouthY, mouthX, mouthSize, eyeSize, eyeSpread
-function applyPreset(v, x, s, eSize, eSpread) {
-  mouthSlider.value = v; mouthValEl.textContent = v;
-  mouthXSlider.value = x; mouthXValEl.textContent = x;
+// Presets — args: mouthY, mouthX, mouthSize, eyeSize, eyeSpread, eyeY, eyeX
+function applyPreset(v, x, s, eSize, eSpread, eY, eX) {
+  mouthSlider.value = v;    mouthValEl.textContent    = v;
+  mouthXSlider.value = x;   mouthXValEl.textContent   = x;
   mouthSizeSlider.value = s; mouthSizeValEl.textContent = s;
-  eyeSizeSliderEl.value = eSize; eyeSizeValEl.textContent = eSize;
+  eyeSizeSliderEl.value = eSize;    eyeSizeValEl.textContent    = eSize;
   eyeSpreadSlider2El.value = eSpread; eyeSpreadVal2El.textContent = eSpread;
+  eyeYSliderEl.value = eY;  eyeYValEl.textContent = eY;
+  eyeXSliderEl.value = eX;  eyeXValEl.textContent = eX + '%';
 }
-// Selfie: face fills frame, mouth ~72%
-document.getElementById('presetSelfie').addEventListener('click',   () => applyPreset(72, 50, 6, 4, 4));
+// Selfie: face fills frame, mouth ~72%, eyes close above
+document.getElementById('presetSelfie').addEventListener('click',   () => applyPreset(72, 50, 6, 3, 4, 8, 50));
 // Portrait: half-body, mouth ~55%
-document.getElementById('presetPortrait').addEventListener('click', () => applyPreset(55, 50, 5, 4, 5));
+document.getElementById('presetPortrait').addEventListener('click', () => applyPreset(55, 50, 5, 3, 5, 6, 50));
 // Full body: small face, mouth ~38%
-document.getElementById('presetFull').addEventListener('click',     () => applyPreset(38, 50, 3, 3, 4));
+document.getElementById('presetFull').addEventListener('click',     () => applyPreset(38, 50, 3, 2, 4, 5, 50));
 
 // Blink state
 let blinkT = 0, nextBlink = 3 + Math.random() * 4;
