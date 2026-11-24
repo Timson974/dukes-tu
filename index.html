@@ -307,8 +307,8 @@ function resizeCvs() {
   cvs.width  = w;
   cvs.height = h;
   if (!img) return;
-  // Cover fit
-  const s = Math.max(w / img.width, h / img.height);
+  // Contain fit — whole photo visible, no cropping
+  const s = Math.min(w / img.width, h / img.height);
   iW = img.width  * s;
   iH = img.height * s;
   iX = (w - iW) / 2;
