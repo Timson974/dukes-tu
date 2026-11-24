@@ -680,31 +680,75 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
     const eyeSpread = parseFloat(document.getElementById('eyeSpreadSlider').value) / 100;
     // Eyes: fixed offset above mouth in pixels (mRx * eyeOffPct * 8)
     const eCx  = W * pctX;
-    const eCy  = mCy - mRx * eyeOffPct * 35 + dy * 0.3;
+    const eCy  = mCy - mRx * eyeOffPct * 18 + dy * 0.3;
     const eGap = mRx * eyeSpread * 2.5;  // gap between eyes
-    const eRx  = mRx * 0.55;   // bigger eyes
+    const eRx  = mRx * 0.38;   // eye size
     const eRy  = blinkClose > 0
       ? eRx * 0.9 * blinkClose
       : eRx * 0.55;
 
-    ctx.save();
-    const eOpen = 1 - blinkClose; // 1=open, 0=closed
-    const eH = eRx * 0.65 * eOpen + 1; // eye height
-    // White
-    ctx.fillStyle = 'rgba(255,255,255,0.88)';
-    ctx.beginPath(); ctx.ellipse(eCx - eGap, eCy, eRx, eH, 0, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(eCx + eGap, eCy, eRx, eH, 0, 0, Math.PI*2); ctx.fill();
-    // Pupil (only when open enough)
-    if (eOpen > 0.3) {
-      const pR = eRx * 0.36 * eOpen;
-      ctx.fillStyle = 'rgba(25,15,5,0.95)';
-      ctx.beginPath(); ctx.arc(eCx - eGap, eCy, pR, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(eCx + eGap, eCy, pR, 0, Math.PI*2); ctx.fill();
-      // Highlight
-      ctx.fillStyle = 'rgba(255,255,255,0.75)';
-      ctx.beginPath(); ctx.arc(eCx - eGap - pR*0.3, eCy - pR*0.35, pR*0.3, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(eCx + eGap - pR*0.3, eCy - pR*0.35, pR*0.3, 0, Math.PI*2); ctx.fill();
+    const eOpen = 1 - blinkClose;
+    const eH = eRx * 0.62 * eOpen + 0.5;
+
+    function drawEye(cx, cy) {
+      ctx.save();
+      // clip to eye shape
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, eRx, Math.max(eH, 0.5), 0, 0, Math.PI*2);
+      ctx.clip();
+
+      // white sclera with soft gradient
+      const sg = ctx.createRadialGradient(cx, cy - eH*0.1, 0, cx, cy, eRx);
+      sg.addColorStop(0, 'rgba(255,253,248,1)');
+      sg.addColorStop(1, 'rgba(220,210,200,0.9)');
+      ctx.fillStyle = sg;
+      ctx.fillRect(cx - eRx, cy - eH, eRx*2, eH*2);
+
+      if (eOpen > 0.25) {
+        // iris — warm brown
+        const iR = eRx * 0.44 * Math.min(eOpen * 1.2, 1);
+        const ig = ctx.createRadialGradient(cx, cy, 0, cx, cy, iR);
+        ig.addColorStop(0,   'rgba(60,35,15,1)');
+        ig.addColorStop(0.4, 'rgba(100,65,25,1)');
+        ig.addColorStop(0.75,'rgba(80,50,20,1)');
+        ig.addColorStop(1,   'rgba(40,20,8,1)');
+        ctx.fillStyle = ig;
+        ctx.beginPath(); ctx.arc(cx, cy, iR, 0, Math.PI*2); ctx.fill();
+
+        // pupil
+        const pR = iR * 0.52;
+        ctx.fillStyle = 'rgba(10,5,2,0.97)';
+        ctx.beginPath(); ctx.arc(cx, cy, pR, 0, Math.PI*2); ctx.fill();
+
+        // catchlight
+        ctx.fillStyle = 'rgba(255,255,255,0.82)';
+        ctx.beginPath(); ctx.arc(cx - pR*0.35, cy - pR*0.4, pR*0.28, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.beginPath(); ctx.arc(cx + pR*0.3, cy + pR*0.25, pR*0.14, 0, Math.PI*2); ctx.fill();
+      }
+
+      // upper eyelid shadow
+      const lidG = ctx.createLinearGradient(cx, cy - eH, cx, cy);
+      lidG.addColorStop(0,   'rgba(60,30,15,0.55)');
+      lidG.addColorStop(0.4, 'rgba(60,30,15,0.08)');
+      lidG.addColorStop(1,   'rgba(60,30,15,0)');
+      ctx.fillStyle = lidG;
+      ctx.fillRect(cx - eRx, cy - eH, eRx*2, eH*2);
+
+      ctx.restore();
+
+      // eyelid line (lash line)
+      ctx.save();
+      ctx.strokeStyle = 'rgba(40,20,10,0.75)';
+      ctx.lineWidth = eRx * 0.12;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, eRx, Math.max(eH, 0.5), 0, Math.PI, Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
     }
+
+    drawEye(eCx - eGap, eCy);
+    drawEye(eCx + eGap, eCy);
     ctx.restore();
   }
 }
