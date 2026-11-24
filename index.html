@@ -681,7 +681,7 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
     // Eyes: fixed offset above mouth in pixels (mRx * eyeOffPct * 8)
     const eCx  = W * pctX;
     // Eyes sit above mouth by a fixed % of canvas height
-    const eCy  = mCy - H * 0.045 + dy * 0.3;
+    const eCy  = Math.max(H * 0.15, mCy - H * 0.045) + dy * 0.3;
     const eGap = W * 0.044;  // gap between eye centers
     const eRx  = W * 0.024;  // eye size
     const eRy  = blinkClose > 0
@@ -795,9 +795,9 @@ function applyPreset(v, x, s, eyeOff, eyeSpr) {
   eyeSpreadSlider.value = eyeSpr; eyeSpreadValEl.textContent = eyeSpr;
 }
 // Selfie: face fills frame, mouth ~75%, eyes ~9% above
-document.getElementById('presetSelfie').addEventListener('click',   () => applyPreset(68, 50, 6, 9, 75));
+document.getElementById('presetSelfie').addEventListener('click',   () => applyPreset(72, 50, 6, 9, 75));
 // Portrait: half-body, mouth ~55%
-document.getElementById('presetPortrait').addEventListener('click', () => applyPreset(45, 50, 5, 10, 85));
+document.getElementById('presetPortrait').addEventListener('click', () => applyPreset(55, 50, 5, 10, 85));
 // Full body: small face, mouth ~38%
 document.getElementById('presetFull').addEventListener('click',     () => applyPreset(38, 50, 3, 7, 70));
 
