@@ -680,9 +680,10 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
     const eyeSpread = parseFloat(document.getElementById('eyeSpreadSlider').value) / 100;
     // Eyes: fixed offset above mouth in pixels (mRx * eyeOffPct * 8)
     const eCx  = W * pctX;
-    const eCy  = mCy - mRx * eyeOffPct * 18 + dy * 0.3;
-    const eGap = mRx * eyeSpread * 2.5;  // gap between eyes
-    const eRx  = mRx * 0.38;   // eye size
+    // Eyes sit above mouth by a fixed % of canvas height (not scaled by mRx)
+    const eCy  = mCy - H * 0.1 + dy * 0.3;
+    const eGap = W * 0.07;   // fixed gap — ~14% of width between eye centers
+    const eRx  = W * 0.038;  // fixed eye size
     const eRy  = blinkClose > 0
       ? eRx * 0.9 * blinkClose
       : eRx * 0.55;
