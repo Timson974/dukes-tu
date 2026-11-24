@@ -543,7 +543,7 @@ function loop() {
   hy += (thy - hy) * 0.07;
 
   // Mouth open — stronger
-  tmouth = energy * 20;
+  tmouth = energy * 10;  // less extreme opening
   mouth += (tmouth - mouth) * 0.22;
 
   // Blink
@@ -628,7 +628,7 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
   // Mouth centre — slight vertical bounce with music
   const mCx = W * pctX + dx * 0.3;
   const mCy = H * pctY + dy * 0.4;
-  const mRx = W * 0.052 * size;
+  const mRx = W * 0.022 * size;  // smaller mouth
   // openH unused — opening computed inside mouth block from moN
 
   // 3. MOUTH — lips always drawn (closed line when mo=0, open when mo>0)
@@ -709,17 +709,27 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
     const eGap = mRx * eyeSpread;
     const eRx  = mRx * 0.32;   // eyes narrower than mouth
     const eRy  = blinkClose > 0
-      ? mRx * 0.18 * blinkClose
-      : mRx * 0.04;
+      ? eRx * 0.9 * blinkClose
+      : eRx * 0.55;
 
     ctx.save();
-    ctx.fillStyle = blinkClose > 0 ? 'rgba(0,0,0,0.9)' : 'rgba(0,0,0,0.25)';
-    ctx.beginPath();
-    ctx.ellipse(eCx - eGap, eCy, eRx, Math.max(eRy, 1), 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(eCx + eGap, eCy, eRx, Math.max(eRy, 1), 0, 0, Math.PI*2);
-    ctx.fill();
+    const eOpen = 1 - blinkClose; // 1=open, 0=closed
+    const eH = eRx * 0.55 * eOpen + 1; // eye height
+    // White
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    ctx.beginPath(); ctx.ellipse(eCx - eGap, eCy, eRx, eH, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(eCx + eGap, eCy, eRx, eH, 0, 0, Math.PI*2); ctx.fill();
+    // Pupil (only when open enough)
+    if (eOpen > 0.3) {
+      const pR = eRx * 0.36 * eOpen;
+      ctx.fillStyle = 'rgba(25,15,5,0.95)';
+      ctx.beginPath(); ctx.arc(eCx - eGap, eCy, pR, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(eCx + eGap, eCy, pR, 0, Math.PI*2); ctx.fill();
+      // Highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.beginPath(); ctx.arc(eCx - eGap - pR*0.3, eCy - pR*0.35, pR*0.3, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(eCx + eGap - pR*0.3, eCy - pR*0.35, pR*0.3, 0, Math.PI*2); ctx.fill();
+    }
     ctx.restore();
   }
 }
