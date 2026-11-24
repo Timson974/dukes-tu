@@ -28,43 +28,72 @@ nav {
 .nav-logo span { color: var(--accent2); }
 .nav-badge { font-size: 11px; font-weight: 600; background: var(--accent); color: #fff; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; }
 
-main { margin-top: 56px; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 20px 16px 48px; gap: 16px; }
+/* ── LAYOUT ── */
+main {
+  margin-top: 56px; flex: 1;
+  display: grid;
+  grid-template-columns: 1fr;   /* mobile: single column */
+  grid-template-rows: auto;
+  gap: 12px;
+  padding: 12px 12px 32px;
+  align-items: start;
+}
+@media (min-width: 760px) {
+  main {
+    grid-template-columns: 1fr 320px;  /* desktop: photo | sidebar */
+    grid-template-rows: auto 1fr;
+    gap: 0 16px;
+    padding: 16px 24px 24px;
+    height: calc(100dvh - 56px);
+    overflow: hidden;
+  }
+  .stage-wrap  { grid-column: 1; grid-row: 1 / 3; height: 100%; }
+  .sidebar     { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; padding-right: 2px; }
+  .upload-grid { max-width: none; }
+  .song-row    { max-width: none; }
+}
 
-.upload-grid { width: 100%; max-width: 480px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* ── UPLOAD ── */
+.upload-grid { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .upload-card {
   background: var(--surface); border: 2px dashed var(--border); border-radius: var(--radius);
-  padding: 20px 12px; text-align: center; cursor: pointer; transition: border-color .2s;
+  padding: 14px 10px; text-align: center; cursor: pointer; transition: border-color .2s;
   position: relative;
 }
 .upload-card:hover, .upload-card.ok { border-color: var(--accent); border-style: solid; background: rgba(99,102,241,.08); }
 .upload-card input { display: none; }
-.upload-card .ico { font-size: 30px; margin-bottom: 6px; }
-.upload-card .lbl { font-size: 13px; font-weight: 600; }
-.upload-card .hint { font-size: 11px; color: var(--text3); margin-top: 2px; }
-.check { position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; border-radius: 50%; background: var(--green); display: none; align-items: center; justify-content: center; font-size: 10px; }
+.upload-card .ico { font-size: 24px; margin-bottom: 4px; }
+.upload-card .lbl { font-size: 12px; font-weight: 600; }
+.upload-card .hint { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.check { position: absolute; top: 6px; right: 6px; width: 16px; height: 16px; border-radius: 50%; background: var(--green); display: none; align-items: center; justify-content: center; font-size: 9px; }
 .upload-card.ok .check { display: flex; }
 
-.song-row { width: 100%; max-width: 480px; }
-.song-label { font-size: 11px; color: var(--text3); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 8px; }
-.chips { display: flex; gap: 8px; flex-wrap: wrap; }
-.chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); font-size: 13px; color: var(--text2); cursor: pointer; transition: all .15s; }
+/* ── SONG CHIPS ── */
+.song-row  { width: 100%; }
+.song-label { font-size: 10px; color: var(--text3); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 6px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { padding: 5px 11px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); font-size: 12px; color: var(--text2); cursor: pointer; transition: all .15s; }
 .chip:hover, .chip.on { border-color: var(--accent); color: var(--accent2); background: rgba(99,102,241,.1); }
 
-.stage-wrap { width: 100%; max-width: 480px; }
-.stage { width: 100%; aspect-ratio: 3/4; border-radius: var(--radius); overflow: hidden; background: #000; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.7); }
+/* ── STAGE (photo canvas) ── */
+.stage-wrap { width: 100%; }
+.stage { width: 100%; height: 100%; min-height: 260px; border-radius: var(--radius); overflow: hidden; background: #000; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.7); }
+@media (max-width: 759px) { .stage { aspect-ratio: 3/4; } }
 #cvs { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--text3); font-size: 14px; }
 .ph .big { font-size: 52px; }
 .ph.gone { display: none; }
 
-.vis { display: flex; align-items: flex-end; gap: 3px; height: 30px; }
-.vb { width: 4px; border-radius: 2px; background: var(--accent2); height: 4px; }
+/* ── VIS ── */
+.vis { display: flex; align-items: flex-end; gap: 3px; height: 24px; }
+.vb { width: 3px; border-radius: 2px; background: var(--accent2); height: 4px; }
 
-.controls { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 10px; }
-.mood { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text2); }
-.mood-ico { font-size: 20px; }
-.btn-row { display: flex; gap: 10px; }
-.btn { flex: 1; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface2); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+/* ── CONTROLS ── */
+.controls { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.mood { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); }
+.mood-ico { font-size: 18px; }
+.btn-row { display: flex; gap: 8px; }
+.btn { flex: 1; padding: 11px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 5px; }
 .btn:hover:not(:disabled) { background: var(--surface); border-color: var(--accent); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn.primary:hover:not(:disabled) { opacity: .85; }
@@ -74,7 +103,7 @@ main { margin-top: 56px; flex: 1; display: flex; flex-direction: column; align-i
 .btn:disabled { opacity: .35; cursor: not-allowed; }
 @keyframes pulse-rec { 0%,100%{ opacity:1; } 50%{ opacity:.6; } }
 
-footer { text-align: center; padding: 16px; font-size: 12px; color: var(--text3); border-top: 1px solid var(--border); }
+footer { text-align: center; padding: 12px; font-size: 11px; color: var(--text3); border-top: 1px solid var(--border); }
 footer a { color: var(--accent2); text-decoration: none; }
 </style>
 </head>
@@ -85,6 +114,16 @@ footer a { color: var(--accent2); text-decoration: none; }
 </nav>
 
 <main>
+  <!-- LEFT: photo canvas -->
+  <div class="stage-wrap">
+    <div class="stage">
+      <canvas id="cvs"></canvas>
+      <div class="ph" id="ph"><div class="big">👤</div><span>Upload a photo to start</span></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: sidebar with upload + controls -->
+  <div class="sidebar">
   <div class="upload-grid">
     <div class="upload-card" id="photoCard" onclick="document.getElementById('photoIn').click()">
       <div class="check">✓</div>
@@ -109,13 +148,6 @@ footer a { color: var(--accent2); text-decoration: none; }
       <div class="chip" data-s="pop">💃 Pop</div>
       <div class="chip" data-s="chill">🌙 Chill</div>
       <div class="chip" data-s="epic">🔥 Epic</div>
-    </div>
-  </div>
-
-  <div class="stage-wrap">
-    <div class="stage">
-      <canvas id="cvs"></canvas>
-      <div class="ph" id="ph"><div class="big">👤</div><span>Upload a photo to start</span></div>
     </div>
   </div>
 
@@ -201,6 +233,7 @@ footer a { color: var(--accent2); text-decoration: none; }
       <span id="eyeSpreadVal" style="display:none">75</span>
     </div>
   </div>
+  </div><!-- /sidebar -->
 </main>
 <footer>DukesTU · <a href="https://timson974.netlify.app">Portfolio</a></footer>
 
