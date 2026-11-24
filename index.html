@@ -631,70 +631,34 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
   const mRx = W * 0.022 * size;  // smaller mouth
   // openH unused — opening computed inside mouth block from moN
 
-  // 3. MOUTH — lips always drawn (closed line when mo=0, open when mo>0)
+  // 3. MOUTH — simple oval, opens vertically with beat
   if (mRx > 2) {
+    const moN = Math.min(mo / Math.max(mRx * 2, 1), 1.0);
+    const mRy = mRx * 0.35 + moN * mRx * 0.6;  // height: small when closed, opens up
+
     ctx.save();
-    ctx.translate(mCx, mCy);
-
-    const L  = mRx * 0.3;              // lip thickness
-    // mo arrives as pixels (0..~20). Normalise to 0..1 relative to mRx
-    const moN = Math.min(mo / Math.max(mRx, 1), 1.0);
-    const op  = moN * L * 2.2;         // opening height
-
-    // Offset: shift whole mouth DOWN by L so the slider point = lip centre line
-    ctx.translate(0, L * 0.5);
-
-    // Clip bounding ellipse — nothing escapes
+    // Dark interior (always, as base)
+    ctx.fillStyle = 'rgba(30,8,8,0.92)';
     ctx.beginPath();
-    ctx.ellipse(0, 0, mRx * 1.05, L * 3.0, 0, 0, Math.PI*2);
-    ctx.clip();
+    ctx.ellipse(mCx, mCy, mRx, mRy, 0, 0, Math.PI*2);
+    ctx.fill();
 
-    // A. Dark cavity + teeth when open
-    if (op > 1) {
+    // Teeth when open
+    if (moN > 0.2) {
       ctx.save();
       ctx.beginPath();
-      ctx.ellipse(0, op*0.3, mRx*0.8, op*0.6 + L*0.2, 0, 0, Math.PI*2);
+      ctx.ellipse(mCx, mCy, mRx * 0.85, mRy * 0.8, 0, 0, Math.PI*2);
       ctx.clip();
-      // dark interior
-      ctx.fillStyle = '#080000';
-      ctx.fillRect(-mRx, -L, mRx*2, op + L*2);
-      // teeth strip
-      if (op > L * 0.6) {
-        ctx.fillStyle = 'rgba(245,240,228,0.95)';
-        ctx.fillRect(-mRx*0.72, -L*0.5, mRx*1.44, Math.min(op*0.42, L*1.2));
-        ctx.strokeStyle = 'rgba(200,185,165,0.5)';
-        ctx.lineWidth = 0.8;
-        [-0.36, 0, 0.36].forEach(f => {
-          ctx.beginPath();
-          ctx.moveTo(f*mRx*0.72, -L*0.5);
-          ctx.lineTo(f*mRx*0.72, Math.min(op*0.38, L*1.1));
-          ctx.stroke();
-        });
-      }
+      ctx.fillStyle = 'rgba(248,243,232,0.95)';
+      ctx.fillRect(mCx - mRx, mCy - mRy * 0.3, mRx * 2, mRy * 0.5);
       ctx.restore();
     }
 
-    // B. Upper lip — Cupid's bow (sits above y=0 line)
+    // Lip outline — pink oval border
+    ctx.strokeStyle = 'rgba(210,120,110,0.95)';
+    ctx.lineWidth = mRx * 0.22;
     ctx.beginPath();
-    ctx.moveTo(-mRx, 0);
-    ctx.bezierCurveTo(-mRx*0.6, -L*1.5,  -mRx*0.18, -L*2.0,   0, -L*1.0);
-    ctx.bezierCurveTo( mRx*0.18, -L*2.0,   mRx*0.6,  -L*1.5,   mRx, 0);
-    ctx.bezierCurveTo( mRx*0.5,   L*0.5,  -mRx*0.5,   L*0.5,  -mRx, 0);
-    ctx.fillStyle = 'rgba(205,118,118,0.93)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(145,62,62,0.55)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // C. Lower lip — drops by op
-    ctx.beginPath();
-    ctx.moveTo(-mRx, 0);
-    ctx.bezierCurveTo(-mRx*0.5, op + L*1.8,  mRx*0.5, op + L*1.8,  mRx, 0);
-    ctx.bezierCurveTo( mRx*0.5,  L*0.4,      -mRx*0.5, L*0.4,       -mRx, 0);
-    ctx.fillStyle = 'rgba(195,108,108,0.90)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(145,62,62,0.55)';
-    ctx.lineWidth = 1;
+    ctx.ellipse(mCx, mCy, mRx, mRy, 0, 0, Math.PI*2);
     ctx.stroke();
 
     ctx.restore();
@@ -706,15 +670,15 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
     // Eyes: fixed offset above mouth in pixels (mRx * eyeOffPct * 8)
     const eCx  = W * pctX;
     const eCy  = mCy - mRx * eyeOffPct * 35 + dy * 0.3;
-    const eGap = mRx * eyeSpread * 2.2;  // wider gap between eyes
-    const eRx  = mRx * 0.32;   // eyes narrower than mouth
+    const eGap = mRx * eyeSpread * 1.6;  // gap between eyes
+    const eRx  = mRx * 0.55;   // bigger eyes
     const eRy  = blinkClose > 0
       ? eRx * 0.9 * blinkClose
       : eRx * 0.55;
 
     ctx.save();
     const eOpen = 1 - blinkClose; // 1=open, 0=closed
-    const eH = eRx * 0.55 * eOpen + 1; // eye height
+    const eH = eRx * 0.65 * eOpen + 1; // eye height
     // White
     ctx.fillStyle = 'rgba(255,255,255,0.88)';
     ctx.beginPath(); ctx.ellipse(eCx - eGap, eCy, eRx, eH, 0, 0, Math.PI*2); ctx.fill();
@@ -775,9 +739,9 @@ function applyPreset(v, x, s, eyeOff, eyeSpr) {
   eyeSpreadSlider.value = eyeSpr; eyeSpreadValEl.textContent = eyeSpr;
 }
 // Selfie: face fills frame, mouth ~75%, eyes ~9% above
-document.getElementById('presetSelfie').addEventListener('click',   () => applyPreset(75, 50, 6, 9, 75));
+document.getElementById('presetSelfie').addEventListener('click',   () => applyPreset(68, 50, 6, 9, 75));
 // Portrait: half-body, mouth ~55%
-document.getElementById('presetPortrait').addEventListener('click', () => applyPreset(55, 50, 5, 10, 85));
+document.getElementById('presetPortrait').addEventListener('click', () => applyPreset(45, 50, 5, 10, 85));
 // Full body: small face, mouth ~38%
 document.getElementById('presetFull').addEventListener('click',     () => applyPreset(38, 50, 3, 7, 70));
 
