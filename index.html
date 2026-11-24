@@ -681,9 +681,9 @@ function draw(dx, dy, mo, energy, blinkClose = 0) {
     // Eyes: fixed offset above mouth in pixels (mRx * eyeOffPct * 8)
     const eCx  = W * pctX;
     // Eyes sit above mouth by a fixed % of canvas height
-    const eCy  = Math.max(H * 0.15, mCy - H * 0.045) + dy * 0.3;
-    const eGap = W * 0.044;  // gap between eye centers
-    const eRx  = W * 0.024;  // eye size
+    const eCy  = mCy - H * 0.055 + dy * 0.3;
+    const eGap = W * 0.038;  // gap between eye centers
+    const eRx  = W * 0.022;  // eye size
     const eRy  = blinkClose > 0
       ? eRx * 0.9 * blinkClose
       : eRx * 0.55;
